@@ -36,6 +36,15 @@ A homologação tem nome, cor e banco de dados próprios (`ponto-hml`), então o
 
 Para instalar: abra o endereço no Chrome (Mac ou Android) e use "Instalar app" / "Adicionar à tela inicial".
 
+## Documentação
+
+- [AGENTS.md](AGENTS.md): guia para agentes de IA (Claude Code e outros)
+- [CONTRIBUTING.md](CONTRIBUTING.md): fluxo de branches, commits e PRs
+- [docs/PRODUCT.md](docs/PRODUCT.md): regras de negócio
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): camadas, modelo de dados e deploy
+- [docs/adr/](docs/adr/): decisões de arquitetura
+- [docs/specs/](docs/specs/): specs das funcionalidades
+
 ## Stack
 
 Vite, React, TypeScript, vite-plugin-pwa, Dexie (IndexedDB) e date-fns.
