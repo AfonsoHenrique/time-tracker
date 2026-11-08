@@ -17,6 +17,19 @@ export type IrregularityKind =
 
 export const MAX_INTERVAL_MINUTES = 12 * 60
 
+const DESCRIPTIONS: Record<IrregularityKind, string> = {
+  'open-past': 'Intervalo aberto de um dia anterior: falta bater a saída.',
+  'too-long': 'Intervalo com mais de 12h.',
+  'crosses-midnight': 'Intervalo que passa da meia-noite.',
+  overlap: 'Intervalos sobrepostos.',
+  'empty-workday': 'Dia útil sem nenhuma hora registrada.',
+}
+
+/** Motivo de uma irregularidade, em texto para a tela. */
+export function describeIrregularity(kind: IrregularityKind): string {
+  return DESCRIPTIONS[kind]
+}
+
 export interface IrregularityInput {
   /** Dia avaliado (`AAAA-MM-DD`). */
   date: string

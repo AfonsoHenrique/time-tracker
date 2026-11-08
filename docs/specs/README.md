@@ -17,6 +17,6 @@ Status: Rascunho → Pronta → Em andamento → Concluída.
 | Spec | Marco | Status |
 |---|---|---|
 | [001-dados-e-regras](001-dados-e-regras.md) | 2. Dados e regras de cálculo | Concluída |
-| [002-tela-hoje](002-tela-hoje.md) | 3. Tela Hoje | Rascunho |
+| [002-tela-hoje](002-tela-hoje.md) | 3. Tela Hoje | Concluída |
 
 Próximas: 003 semana e navegação, 004 período e exportação, 005 backup e persistência.
