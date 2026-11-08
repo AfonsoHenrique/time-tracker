@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeIrregularity, findIrregularities, type IrregularityKind } from './irregular'
+import { describeIrregularity, findIrregularities, isIrregularDay, type IrregularityKind } from './irregular'
 import { iv } from './test-helpers'
 
 const now = new Date('2026-11-13T09:00')
@@ -71,5 +71,13 @@ describe('describeIrregularity', () => {
     expect(texts.every((text) => text.length > 0)).toBe(true)
     expect(new Set(texts).size).toBe(kinds.length)
     expect(describeIrregularity('open-past')).toBe('Intervalo aberto de um dia anterior: falta bater a saída.')
+  })
+})
+
+describe('isIrregularDay', () => {
+  it('olha só os intervalos do dia', () => {
+    const intervals = [iv('2026-11-09 08:00', '2026-11-09 12:00'), iv('2026-11-10 08:00', '2026-11-10 12:00'), iv('2026-11-10 11:00', '2026-11-10 13:00')]
+    expect(isIrregularDay({ date: '2026-11-09', target: 480 }, intervals, now)).toBe(false)
+    expect(isIrregularDay({ date: '2026-11-10', target: 480 }, intervals, now)).toBe(true)
   })
 })

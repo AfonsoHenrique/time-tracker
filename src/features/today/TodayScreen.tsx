@@ -10,7 +10,7 @@ import { dayKey, isWorkDay, parseDayKey } from '../../lib/time'
 import type { Interval } from '../../lib/types'
 import { errorMessage } from '../shared/errors'
 import { useNow } from '../shared/useNow'
-import { useWeekData, type WeekData } from '../shared/useWeekData'
+import { useRangeData, type RangeData } from '../shared/useRangeData'
 import { IntervalSheet, type IntervalValues } from './IntervalSheet'
 import './today.css'
 
@@ -28,7 +28,7 @@ export function TodayScreen({ day: selected, onChangeDay }: Props) {
   const today = dayKey(now)
   const day = selected ?? today
   const isToday = day === today
-  const { data, run } = useWeekData(day)
+  const { data, run } = useRangeData('week', day)
 
   const goTo = (next: string) => onChangeDay(next === today ? null : next)
   const shift = (amount: number) => goTo(dayKey(addDays(parseDayKey(day), amount)))
@@ -64,7 +64,7 @@ interface DayViewProps {
   day: string
   isToday: boolean
   now: Date
-  data: WeekData
+  data: RangeData
   run: Run
 }
 
@@ -73,7 +73,7 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
   const [actionError, setActionError] = useState<string | null>(null)
   const repo = getRepository()
 
-  const { settings, weekIntervals, daysOff, open } = data
+  const { settings, intervals: weekIntervals, daysOff, open } = data
   const intervals = intervalsOfDay(weekIntervals, day)
   const summary = summarizeDay(day, weekIntervals, daysOff, settings, now)
   const week = summarizeWeek(day, weekIntervals, daysOff, settings, now)

@@ -1,0 +1,33 @@
+.export {
+  margin-top: 24px;
+}
+
+.export h2 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.export-summary {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+}
+
+.export-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.export-ok,
+.export-error {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+}
+
+.export-ok {
+  color: var(--ok);
+}
+
+.export-error {
+  color: var(--danger);
+}
