@@ -47,7 +47,8 @@ body {
 .app {
   max-width: 480px;
   margin: 0 auto;
-  padding: max(24px, env(safe-area-inset-top)) 16px 24px;
+  /* O espaço de baixo deixa o fim da tela livre da barra de abas. */
+  padding: max(24px, env(safe-area-inset-top)) 16px calc(88px + env(safe-area-inset-bottom));
 }
 
 button,
@@ -141,4 +142,31 @@ input {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* Cabeçalho com setas, usado nas telas Hoje e Semana. */
+.day-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.day-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1.15rem;
+  text-align: center;
+}
+
+.back-today {
+  display: block;
+  margin: 0 auto 8px;
+  min-height: 36px;
+  padding: 4px 14px;
+  font-size: 0.9rem;
+}
+
+.loading {
+  text-align: center;
 }

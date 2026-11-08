@@ -4,6 +4,8 @@ import {
   formatElapsed,
   formatShortDay,
   formatTime,
+  formatWeekdayShort,
+  formatWeekTitle,
   intervalToForm,
   parseTimeInput,
   readIntervalForm,
@@ -119,5 +121,29 @@ describe('intervalToForm', () => {
   it('intervalo em andamento fica com o fim vazio; o que cruza a meia-noite guarda o dia do fim', () => {
     expect(intervalToForm('2026-11-09', iv('2026-11-09 13:00')).end).toBe('')
     expect(intervalToForm('2026-11-09', iv('2026-11-09 22:00', '2026-11-10 01:00')).endDay).toBe('2026-11-10')
+  })
+})
+
+describe('formatWeekTitle e formatWeekdayShort', () => {
+  const now = new Date(at('2026-11-09 10:00'))
+
+  it('semana dentro de um mês', () => {
+    expect(formatWeekTitle({ start: '2026-11-02', end: '2026-11-08' }, now)).toBe('2 a 8 de novembro')
+  })
+
+  it('semana que vira o mês', () => {
+    expect(formatWeekTitle({ start: '2026-11-30', end: '2026-12-06' }, now)).toBe('30 de novembro a 6 de dezembro')
+  })
+
+  it('semana que vira o ano ou de outro ano', () => {
+    expect(formatWeekTitle({ start: '2026-12-28', end: '2027-01-03' }, now)).toBe(
+      '28 de dezembro de 2026 a 3 de janeiro de 2027',
+    )
+    expect(formatWeekTitle({ start: '2025-11-03', end: '2025-11-09' }, now)).toBe('3 a 9 de novembro de 2025')
+  })
+
+  it('dia curto com dia da semana', () => {
+    expect(formatWeekdayShort('2026-11-09')).toBe('Seg 09/11')
+    expect(formatWeekdayShort('2026-11-15')).toBe('Dom 15/11')
   })
 })

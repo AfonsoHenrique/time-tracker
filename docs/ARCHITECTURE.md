@@ -31,10 +31,16 @@ A regra que mais importa: **a UI nunca importa Dexie diretamente**. Na fase 2, o
 
 Como as telas leem os dados:
 
-- Cada tela tem um hook (ex.: `useToday`) que lê pelo repositório e expõe `run(ação)`, que executa a escrita e recarrega. Não há cache global nem `dexie-react-hooks`.
-- A tela Hoje carrega a **semana inteira** do dia mostrado, porque precisa da falta na semana. Trocar de dia dentro da mesma semana não lê o banco de novo.
+- As telas usam `useWeekData(dia)`, que lê pelo repositório e expõe `run(ação)`, que executa a escrita e recarrega. Não há cache global nem `dexie-react-hooks`.
+- Hoje e Semana carregam a **semana inteira** do dia mostrado (a tela Hoje precisa da falta na semana). Trocar de dia dentro da mesma semana não lê o banco de novo.
 - Os hooks recarregam quando o app volta ao primeiro plano (`visibilitychange`), porque outra aba pode ter mudado os dados.
 - O relógio (`useNow`) atualiza a cada segundo. O dia de "hoje" sai dele, então a tela vira de dia sozinha à meia-noite.
+
+Navegação:
+
+- A tela e o dia ficam no hash da URL: `#/hoje`, `#/hoje/2026-11-10`, `#/semana`, `#/semana/2026-11-02`. Sem data, a tela segue hoje ou a semana atual. `src/lib/route.ts` lê e escreve o hash, e `useRoute` escuta `hashchange`. Não há biblioteca de roteamento.
+- Hash, e não caminho, porque o GitHub Pages não reescreve caminhos para o `index.html`, e o service worker já serve a página do app.
+- Abrir um dia a partir da Semana cria uma entrada no histórico, então o botão voltar do Android retorna à mesma semana. As setas e os botões "Voltar para hoje" e "Esta semana" substituem a entrada atual, para o voltar não passar dia por dia.
 
 ## Modelo de dados
 

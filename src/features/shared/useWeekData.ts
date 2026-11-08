@@ -3,7 +3,7 @@ import { getRepository } from '../../db/repository'
 import { weekRange } from '../../lib/time'
 import type { Interval, Settings } from '../../lib/types'
 
-export interface TodayData {
+export interface WeekData {
   /** Segunda-feira da semana carregada. */
   weekStart: string
   settings: Settings
@@ -14,7 +14,7 @@ export interface TodayData {
   open: Interval | null
 }
 
-async function load(weekStart: string): Promise<TodayData> {
+async function load(weekStart: string): Promise<WeekData> {
   const repo = getRepository()
   const week = weekRange(weekStart)
   const [settings, weekIntervals, daysOff, open] = await Promise.all([
@@ -27,14 +27,14 @@ async function load(weekStart: string): Promise<TodayData> {
 }
 
 /**
- * Dados da tela Hoje para a semana do dia, lidos só pelo repositório. Trocar de dia dentro
+ * Dados da semana do dia, lidos só pelo repositório. Trocar de dia dentro
  * da mesma semana não recarrega; trocar de semana devolve `null` até a nova semana chegar.
  *
  * `run` executa uma ação (entrar, sair, salvar…) e recarrega em seguida. Também recarrega quando
  * o app volta ao primeiro plano, porque os dados podem ter mudado em outra aba.
  */
-export function useToday(day: string) {
-  const [data, setData] = useState<TodayData | null>(null)
+export function useWeekData(day: string) {
+  const [data, setData] = useState<WeekData | null>(null)
   const [version, setVersion] = useState(0)
 
   const weekStart = weekRange(day).start

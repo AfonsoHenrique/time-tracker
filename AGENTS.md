@@ -38,15 +38,18 @@ src/
     time.ts         # dia local, semana, período 26–25, dias úteis
     balance.ts      # trabalhado, meta, falta e excedente (dia e semana)
     irregular.ts    # dias irregulares e o texto de cada motivo
-    clock.ts        # cronômetro, título do dia, horas HH:MM e formulário de intervalo
+    clock.ts        # cronômetro, títulos de dia e semana, horas HH:MM e formulário de intervalo
+    route.ts        # rota no hash da URL (#/hoje/AAAA-MM-DD, #/semana/AAAA-MM-DD)
     test-helpers.ts # at() e iv() para montar instantes e intervalos nos testes
     *.test.ts       # testes ao lado do código
   db/
     schema.ts       # Dexie (PontoDb): tabelas e índices
     repository.ts   # única porta de entrada para os dados (getRepository)
   features/
-    today/          # tela Hoje: TodayScreen, IntervalSheet, useToday (dados da semana), useNow (relógio)
-  (próximos marcos) components/
+    shared/         # useWeekData (dados da semana), useNow (relógio), useRoute (rota), errors
+    today/          # tela Hoje: TodayScreen, IntervalSheet
+    week/           # tela Semana: WeekScreen
+  components/       # TabBar, Stat/BalanceStat: visuais, sem regra de negócio
 docs/               # produto, arquitetura, ADRs e specs
 .github/workflows/  # ci.yml (PRs) e deploy.yml (Pages)
 ```
