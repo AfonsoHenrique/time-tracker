@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code: configurações locais de cada pessoa
+.claude/settings.local.json

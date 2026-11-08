@@ -22,7 +22,7 @@ Funcionalidades novas começam por uma spec em `docs/specs/` (veja [`docs/specs/
 
 ## Checklist do PR
 
-- [ ] `npm run lint && npm test && npm run build` passando
+- [ ] `npm run check && npm run build` passando
 - [ ] Regras de cálculo novas ou alteradas têm teste
 - [ ] Spec atualizada (tarefas marcadas, critérios de aceite conferidos)
 - [ ] Docs e `AGENTS.md` atualizados se algo descrito mudou

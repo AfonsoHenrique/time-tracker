@@ -19,11 +19,13 @@ npm install          # dependências
 npm run dev          # servidor local (produção)
 npm test             # testes (Vitest)
 npm run lint         # oxlint
+npm run typecheck    # tsc sem emitir arquivos
+npm run check        # lint + typecheck + testes
 npm run build        # tsc + build de produção em dist/
 VITE_APP_ENV=hml npm run build   # build de homologação
 ```
 
-Antes de abrir um PR, rode `npm run lint && npm test && npm run build`. O CI roda os mesmos passos.
+Antes de abrir um PR, rode `npm run check && npm run build`. O CI roda os mesmos passos.
 
 ## Estrutura
 
