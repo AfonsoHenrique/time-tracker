@@ -1,5 +1,6 @@
 import { addDays } from 'date-fns'
 import { useState } from 'react'
+import { BalanceStat, Stat } from '../../components/Stat'
 import { getRepository } from '../../db/repository'
 import { intervalMinutes, intervalsOfDay, summarizeDay, summarizeWeek } from '../../lib/balance'
 import { formatDayTitle, formatElapsed, formatShortDay, formatTime } from '../../lib/clock'
@@ -7,25 +8,29 @@ import { formatDuration } from '../../lib/duration'
 import { describeIrregularity, findIrregularities } from '../../lib/irregular'
 import { dayKey, isWorkDay, parseDayKey } from '../../lib/time'
 import type { Interval } from '../../lib/types'
-import { errorMessage } from './errors'
+import { errorMessage } from '../shared/errors'
+import { useNow } from '../shared/useNow'
+import { useWeekData, type WeekData } from '../shared/useWeekData'
 import { IntervalSheet, type IntervalValues } from './IntervalSheet'
-import { useNow } from './useNow'
-import { useToday, type TodayData } from './useToday'
 import './today.css'
 
 type Editing = { kind: 'new' } | { kind: 'edit'; interval: Interval }
 type Run = (action: () => Promise<unknown>) => Promise<void>
 
-export function TodayScreen() {
-  // `null` segue o dia de hoje, inclusive quando a data vira com o app aberto.
-  const [selected, setSelected] = useState<string | null>(null)
+interface Props {
+  /** Dia da rota. `null` segue o dia de hoje, inclusive quando a data vira com o app aberto. */
+  day: string | null
+  onChangeDay: (day: string | null) => void
+}
+
+export function TodayScreen({ day: selected, onChangeDay }: Props) {
   const now = useNow(1000)
   const today = dayKey(now)
   const day = selected ?? today
   const isToday = day === today
-  const { data, run } = useToday(day)
+  const { data, run } = useWeekData(day)
 
-  const goTo = (next: string) => setSelected(next === today ? null : next)
+  const goTo = (next: string) => onChangeDay(next === today ? null : next)
   const shift = (amount: number) => goTo(dayKey(addDays(parseDayKey(day), amount)))
 
   return (
@@ -59,7 +64,7 @@ interface DayViewProps {
   day: string
   isToday: boolean
   now: Date
-  data: TodayData
+  data: WeekData
   run: Run
 }
 
@@ -114,12 +119,9 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
       )}
 
       <section className="stats" aria-label="Resumo">
-        <div className="stat">
-          <span className="stat-label">{isToday ? 'Trabalhado hoje' : 'Trabalhado'}</span>
-          <span className="stat-value">{formatDuration(summary.worked)}</span>
-        </div>
-        <Balance label="no dia" remaining={summary.remaining} extra={summary.extra} />
-        <Balance label="na semana" remaining={week.remaining} extra={week.extra} />
+        <Stat label={isToday ? 'Trabalhado hoje' : 'Trabalhado'} minutes={summary.worked} />
+        <BalanceStat label="no dia" remaining={summary.remaining} extra={summary.extra} />
+        <BalanceStat label="na semana" remaining={week.remaining} extra={week.extra} />
       </section>
       <p className="target-line muted">
         Meta do dia {formatDuration(summary.target)} · da semana {formatDuration(week.target)}
@@ -191,19 +193,5 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
         />
       )}
     </>
-  )
-}
-
-function Balance({ label, remaining, extra }: { label: string; remaining: number; extra: number }) {
-  return extra > 0 ? (
-    <div className="stat stat-extra">
-      <span className="stat-label">Excedente {label}</span>
-      <span className="stat-value">+{formatDuration(extra)}</span>
-    </div>
-  ) : (
-    <div className="stat">
-      <span className="stat-label">Falta {label}</span>
-      <span className="stat-value">{formatDuration(remaining)}</span>
-    </div>
   )
 }

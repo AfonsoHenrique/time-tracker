@@ -1,0 +1,56 @@
+.week-days {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.week-days li + li {
+  border-top: 1px solid var(--border);
+}
+
+.week-day {
+  display: grid;
+  grid-template-columns: 5.5em 1.5em 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.week-day-today {
+  background: var(--surface);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+.week-day-today .week-day-name {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.week-day-name,
+.week-day-worked {
+  font-variant-numeric: tabular-nums;
+}
+
+.week-day-warning {
+  color: var(--warning-border);
+}
+
+.week-day-target {
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.week-day-worked {
+  min-width: 3.5em;
+  font-weight: 600;
+  text-align: right;
+}

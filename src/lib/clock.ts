@@ -1,5 +1,6 @@
 import { differenceInSeconds, format, getISODay, parseISO } from 'date-fns'
 import { dayKey, parseDayKey } from './time'
+import type { DayRange } from './types'
 
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
 const MONTHS = [
@@ -33,6 +34,29 @@ export function formatDayTitle(key: string, now: Date): string {
   const date = parseDayKey(key)
   const base = `${WEEKDAYS[getISODay(date) - 1]}, ${date.getDate()} de ${MONTHS[date.getMonth()]}`
   return date.getFullYear() === now.getFullYear() ? base : `${base} de ${date.getFullYear()}`
+}
+
+const SHORT_WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+
+/** Dia curto com o dia da semana, ex.: "Seg 09/11". */
+export function formatWeekdayShort(key: string): string {
+  const date = parseDayKey(key)
+  return `${SHORT_WEEKDAYS[getISODay(date) - 1]} ${format(date, 'dd/MM')}`
+}
+
+/**
+ * Título de uma semana, ex.: "2 a 8 de novembro" ou "30 de novembro a 6 de dezembro".
+ * Os anos aparecem quando a semana vira o ano ou não é do ano de `now`.
+ */
+export function formatWeekTitle(range: DayRange, now: Date): string {
+  const start = parseDayKey(range.start)
+  const end = parseDayKey(range.end)
+  const sameYear = start.getFullYear() === end.getFullYear()
+  const showYear = !sameYear || end.getFullYear() !== now.getFullYear()
+  const endText = `${end.getDate()} de ${MONTHS[end.getMonth()]}${showYear ? ` de ${end.getFullYear()}` : ''}`
+  if (start.getMonth() === end.getMonth() && sameYear) return `${start.getDate()} a ${endText}`
+  const startText = `${start.getDate()} de ${MONTHS[start.getMonth()]}${sameYear ? '' : ` de ${start.getFullYear()}`}`
+  return `${startText} a ${endText}`
 }
 
 /** Hora local de um instante, `HH:MM`. É o formato de `<input type="time">`. */

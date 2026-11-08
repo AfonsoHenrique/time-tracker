@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { formatShortDay, intervalToForm, readIntervalForm, type IntervalForm } from '../../lib/clock'
 import type { Interval } from '../../lib/types'
-import { errorMessage } from './errors'
+import { errorMessage } from '../shared/errors'
 
 export interface IntervalValues {
   start: Date
