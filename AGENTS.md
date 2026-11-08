@@ -33,9 +33,17 @@ Antes de abrir um PR, rode `npm run check && npm run build`. O CI roda os mesmos
 src/
   main.tsx          # entrada; pede armazenamento persistente
   App.tsx           # raiz da UI
-  lib/              # lógica pura, sem React (cálculos, formatação, ambiente)
+  lib/              # lógica pura, sem React nem banco
+    types.ts        # Interval, DayOff, Settings, DEFAULT_SETTINGS
+    time.ts         # dia local, semana, período 26–25, dias úteis
+    balance.ts      # trabalhado, meta, falta e excedente (dia e semana)
+    irregular.ts    # dias irregulares
+    test-helpers.ts # at() e iv() para montar instantes e intervalos nos testes
     *.test.ts       # testes ao lado do código
-  (próximos marcos) db/, features/, components/
+  db/
+    schema.ts       # Dexie (PontoDb): tabelas e índices
+    repository.ts   # única porta de entrada para os dados (getRepository)
+  (próximos marcos) features/, components/
 docs/               # produto, arquitetura, ADRs e specs
 .github/workflows/  # ci.yml (PRs) e deploy.yml (Pages)
 ```
@@ -44,7 +52,7 @@ docs/               # produto, arquitetura, ADRs e specs
 
 1. **Comece pela spec.** Toda funcionalidade nova tem (ou ganha) um arquivo em `docs/specs/`. Leia a spec e os critérios de aceite antes de codar. Se a tarefa não tem spec e não é trivial, escreva a spec primeiro e peça confirmação.
 2. **Regras de cálculo são lógica pura em `src/lib/` e sempre têm teste.** Saldo do dia, da semana, período 26–25 e dias irregulares não podem depender de React nem do banco.
-3. **Acesso a dados só pela camada de repositório** (`src/db/`, a partir do marco 2). As telas não importam Dexie diretamente, porque a fase 2 troca IndexedDB por Firestore.
+3. **Acesso a dados só pela camada de repositório** (`getRepository()` de `src/db/repository.ts`). As telas não importam Dexie diretamente, porque a fase 2 troca IndexedDB por Firestore.
 4. **Mudou uma decisão de arquitetura?** Registre um ADR novo em `docs/adr/` em vez de editar um ADR aceito.
 5. **Mantenha a documentação viva.** Se o código muda algo descrito em `docs/` ou neste arquivo, atualize no mesmo PR.
 
@@ -52,7 +60,8 @@ docs/               # produto, arquitetura, ADRs e specs
 
 - **Idioma**: textos da interface, comentários, docs, commits e PRs em português do Brasil. Identificadores de código (variáveis, funções, tipos, campos do banco) em inglês.
 - **TypeScript estrito**, sem `any`. Prefira funções puras e tipos explícitos nas fronteiras.
-- **Datas**: use `date-fns`. Semana começa na segunda. Guarde instantes como ISO 8601 com fuso; dia de calendário como `AAAA-MM-DD` no fuso local.
+- **Datas**: use `date-fns` e as funções de `src/lib/time.ts`. Semana começa na segunda. Instantes ficam em ISO 8601 UTC no minuto exato; dia de calendário é `AAAA-MM-DD` no fuso local.
+- **Testes de data** usam `at('2026-11-09 08:00')` e `iv(início, fim)` de `src/lib/test-helpers.ts`, com horário local, para passar em qualquer fuso.
 - **Durações** em minutos inteiros na lógica; formatação só na borda (`formatDuration`).
 - **Sem arredondamento automático** de horários: o usuário arredonda à mão.
 - **Estilo**: CSS simples com variáveis em `:root`; suporte a tema escuro; layout pensado primeiro para celular.

@@ -34,7 +34,7 @@ A regra que mais importa: **a UI nunca importa Dexie diretamente**. Na fase 2, o
 ```ts
 interface Interval {
   id: string          // uuid
-  start: string       // ISO 8601 com fuso
+  start: string       // ISO 8601 em UTC, no minuto exato (ex.: 2026-11-09T11:00:00.000Z)
   end: string | null  // null = em andamento
   note: string
   createdAt: string
@@ -54,6 +54,15 @@ interface Settings {
 ```
 
 O dia de um intervalo é o dia local do seu `start`.
+
+Os instantes são guardados em UTC, sempre no mesmo formato, para que a ordem do texto seja a ordem do tempo. Assim o índice `start` do IndexedDB responde às buscas por faixa de dias, e o dia local é calculado na leitura, no fuso do aparelho. O repositório corta os segundos ao gravar: o app guarda o minuto exato e não arredonda nada.
+
+Regras de gravação (`src/db/repository.ts`):
+
+- Só pode existir um intervalo em andamento. Abrir outro, ou reabrir um fechado, falha com `RepositoryError` de código `open-interval-exists`.
+- O fim não pode ser antes do início (`invalid-interval`).
+- Intervalos fechados podem se sobrepor: o destaque de dia irregular avisa, e o usuário corrige.
+- O intervalo aberto é achado por filtro, porque o IndexedDB não indexa `null`.
 
 ## Ambientes
 
