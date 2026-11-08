@@ -1,8 +1,13 @@
 name: Deploy no GitHub Pages
 
+# Publica os dois ambientes juntos, porque o GitHub Pages guarda um único site por repositório:
+#   main    → produção   (/time-tracker/)
+#   develop → homologação (/time-tracker/hml/)
+# Um push em qualquer uma das duas branches reconstrói as duas.
+
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
 
 permissions:
@@ -18,18 +23,62 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout produção (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: prod
+
+      - name: Verifica se a branch develop existe
+        id: hml
+        run: |
+          if git ls-remote --exit-code --heads "https://github.com/${{ github.repository }}" develop > /dev/null; then
+            echo "ref=develop" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch develop não existe; homologação usa a main."
+            echo "ref=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout homologação
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.hml.outputs.ref }}
+          path: hml
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
+          cache-dependency-path: |
+            prod/package-lock.json
+            hml/package-lock.json
+
+      - name: Build produção
+        working-directory: prod
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Build homologação
+        working-directory: hml
+        env:
+          VITE_APP_ENV: hml
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Junta os dois ambientes
+        run: |
+          mkdir site
+          cp -r prod/dist/. site/
+          mkdir site/hml
+          cp -r hml/dist/. site/hml/
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build

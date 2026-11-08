@@ -57,3 +57,18 @@ body {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+.env-badge {
+  position: sticky;
+  top: 0;
+  margin: -8px auto 16px;
+  width: fit-content;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #bf8700;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

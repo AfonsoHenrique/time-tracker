@@ -21,10 +21,18 @@ npm run dev
 | `npm run build` | Build de produção em `dist/` |
 | `npm run preview` | Serve o build localmente |
 
-## Publicação
+## Ambientes
 
-Cada push na `main` publica o app no GitHub Pages pelo workflow `.github/workflows/deploy.yml`.
-Endereço: https://afonsohenrique.github.io/time-tracker/
+| Ambiente | Branch | Endereço |
+|---|---|---|
+| Produção | `main` | https://afonsohenrique.github.io/time-tracker/ |
+| Homologação | `develop` | https://afonsohenrique.github.io/time-tracker/hml/ |
+
+Fluxo: as mudanças entram na `develop` por PR, são testadas em homologação e depois vão para a `main` com um PR `develop → main`.
+
+Um push em `main` ou `develop` reconstrói e publica os dois ambientes juntos (`.github/workflows/deploy.yml`), porque o GitHub Pages guarda um único site por repositório.
+
+A homologação tem nome, cor e banco de dados próprios (`ponto-hml`), então os testes não misturam dados com a produção. Para rodar o build de homologação localmente: `VITE_APP_ENV=hml npm run build`.
 
 Para instalar: abra o endereço no Chrome (Mac ou Android) e use "Instalar app" / "Adicionar à tela inicial".
 

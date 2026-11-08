@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { IS_HML } from './lib/env'
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
@@ -12,6 +13,7 @@ function App() {
 
   return (
     <main className="app">
+      {IS_HML && <div className="env-badge">Homologação</div>}
       <h1>Ponto</h1>
       <p className="clock">
         {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
