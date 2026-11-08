@@ -31,14 +31,15 @@ A regra que mais importa: **a UI nunca importa Dexie diretamente**. Na fase 2, o
 
 Como as telas leem os dados:
 
-- As telas usam `useWeekData(dia)`, que lê pelo repositório e expõe `run(ação)`, que executa a escrita e recarrega. Não há cache global nem `dexie-react-hooks`.
-- Hoje e Semana carregam a **semana inteira** do dia mostrado (a tela Hoje precisa da falta na semana). Trocar de dia dentro da mesma semana não lê o banco de novo.
+- As telas usam `useRangeData('week' | 'period', dia)`, que lê pelo repositório a semana ou o período que contém o dia e expõe `run(ação)`, que executa a escrita e recarrega. Não há cache global nem `dexie-react-hooks`. O período (até 31 dias) vem numa leitura só.
+- Hoje e Semana carregam a **semana inteira** do dia mostrado (a tela Hoje precisa da falta na semana). Ao trocar de dia dentro da mesma semana, a tela continua com os dados que já tem enquanto a nova leitura chega, sem piscar.
 - Os hooks recarregam quando o app volta ao primeiro plano (`visibilitychange`), porque outra aba pode ter mudado os dados.
 - O relógio (`useNow`) atualiza a cada segundo. O dia de "hoje" sai dele, então a tela vira de dia sozinha à meia-noite.
 
 Navegação:
 
-- A tela e o dia ficam no hash da URL: `#/hoje`, `#/hoje/2026-11-10`, `#/semana`, `#/semana/2026-11-02`. Sem data, a tela segue hoje ou a semana atual. `src/lib/route.ts` lê e escreve o hash, e `useRoute` escuta `hashchange`. Não há biblioteca de roteamento.
+- A tela e o dia ficam no hash da URL: `#/hoje`, `#/hoje/2026-11-10`, `#/semana`, `#/semana/2026-11-02`, `#/periodo`, `#/periodo/2026-11-10`. Sem data, a tela segue hoje ou a semana atual. `src/lib/route.ts` lê e escreve o hash, e `useRoute` escuta `hashchange`. Não há biblioteca de roteamento.
+- Abrir uma semana a partir do Período também cria entrada no histórico.
 - Hash, e não caminho, porque o GitHub Pages não reescreve caminhos para o `index.html`, e o service worker já serve a página do app.
 - Abrir um dia a partir da Semana cria uma entrada no histórico, então o botão voltar do Android retorna à mesma semana. As setas e os botões "Voltar para hoje" e "Esta semana" substituem a entrada atual, para o voltar não passar dia por dia.
 
@@ -94,3 +95,12 @@ Os dois ambientes ficam na **mesma origem** (`afonsohenrique.github.io`):
 
 - `navigator.storage.persist()` ao iniciar, para o navegador não despejar os dados.
 - Backup manual em JSON (exportar/importar) como rede de segurança até a fase 2.
+
+## Exportação
+
+`src/lib/export.ts` gera as linhas da aba SEMANA (uma por intervalo fechado, do mais recente para o mais antigo) e os dois formatos:
+
+- **TSV** para a área de transferência, sem cabeçalho, com tabulação e quebra de linha da observação trocadas por espaço.
+- **CSV** para download, com cabeçalho, `;`, `\r\n` e BOM UTF-8, que é como o Excel em português abre um CSV sem perguntar nada.
+
+`ExportPanel` (`src/features/shared/`) faz a cópia (`navigator.clipboard`) e o download (`Blob`), e é usado nas telas Semana e Período.

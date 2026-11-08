@@ -1,5 +1,5 @@
 import { parseISO } from 'date-fns'
-import { intervalMinutes } from './balance'
+import { intervalMinutes, intervalsOfDay } from './balance'
 import { dayKey } from './time'
 import type { Interval } from './types'
 
@@ -67,4 +67,9 @@ export function findIrregularities({ date, intervals, target, now }: Irregularit
 
   const order: IrregularityKind[] = ['open-past', 'too-long', 'crosses-midnight', 'overlap', 'empty-workday']
   return order.filter((kind) => found.has(kind))
+}
+
+/** Se o dia tem alguma irregularidade. `intervals` pode trazer outros dias: só os do dia contam. */
+export function isIrregularDay(day: { date: string; target: number }, intervals: readonly Interval[], now: Date): boolean {
+  return findIrregularities({ date: day.date, intervals: intervalsOfDay(intervals, day.date), target: day.target, now }).length > 0
 }

@@ -45,10 +45,10 @@ export function formatWeekdayShort(key: string): string {
 }
 
 /**
- * Título de uma semana, ex.: "2 a 8 de novembro" ou "30 de novembro a 6 de dezembro".
- * Os anos aparecem quando a semana vira o ano ou não é do ano de `now`.
+ * Título de uma faixa de dias (semana ou período), ex.: "2 a 8 de novembro" ou
+ * "26 de outubro a 25 de novembro". Os anos aparecem quando a faixa vira o ano ou não é do ano de `now`.
  */
-export function formatWeekTitle(range: DayRange, now: Date): string {
+export function formatRangeTitle(range: DayRange, now: Date): string {
   const start = parseDayKey(range.start)
   const end = parseDayKey(range.end)
   const sameYear = start.getFullYear() === end.getFullYear()
