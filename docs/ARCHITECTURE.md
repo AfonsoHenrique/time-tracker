@@ -29,6 +29,13 @@ PWA estático, sem servidor. Tudo roda no navegador e os dados ficam no IndexedD
 
 A regra que mais importa: **a UI nunca importa Dexie diretamente**. Na fase 2, o repositório passa a falar com o Firestore e as telas não mudam.
 
+Como as telas leem os dados:
+
+- Cada tela tem um hook (ex.: `useToday`) que lê pelo repositório e expõe `run(ação)`, que executa a escrita e recarrega. Não há cache global nem `dexie-react-hooks`.
+- A tela Hoje carrega a **semana inteira** do dia mostrado, porque precisa da falta na semana. Trocar de dia dentro da mesma semana não lê o banco de novo.
+- Os hooks recarregam quando o app volta ao primeiro plano (`visibilitychange`), porque outra aba pode ter mudado os dados.
+- O relógio (`useNow`) atualiza a cada segundo. O dia de "hoje" sai dele, então a tela vira de dia sozinha à meia-noite.
+
 ## Modelo de dados
 
 ```ts

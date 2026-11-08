@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findIrregularities } from './irregular'
+import { describeIrregularity, findIrregularities, type IrregularityKind } from './irregular'
 import { iv } from './test-helpers'
 
 const now = new Date('2026-11-13T09:00')
@@ -61,5 +61,15 @@ describe('findIrregularities', () => {
       'too-long',
       'overlap',
     ])
+  })
+})
+
+describe('describeIrregularity', () => {
+  it('tem um texto para cada tipo', () => {
+    const kinds: IrregularityKind[] = ['open-past', 'too-long', 'crosses-midnight', 'overlap', 'empty-workday']
+    const texts = kinds.map(describeIrregularity)
+    expect(texts.every((text) => text.length > 0)).toBe(true)
+    expect(new Set(texts).size).toBe(kinds.length)
+    expect(describeIrregularity('open-past')).toBe('Intervalo aberto de um dia anterior: falta bater a saída.')
   })
 })

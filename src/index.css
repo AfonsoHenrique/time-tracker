@@ -3,6 +3,13 @@
   --text: #1f2328;
   --muted: #656d76;
   --accent: #1f6feb;
+  --surface: #f6f8fa;
+  --border: #d0d7de;
+  --ok: #1a7f37;
+  --danger: #cf222e;
+  --warning-bg: #fff8c5;
+  --warning-border: #d4a72c;
+  --error-bg: #ffebe9;
 
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
@@ -17,6 +24,13 @@
     --text: #e6edf3;
     --muted: #8d96a0;
     --accent: #4493f8;
+    --surface: #161b22;
+    --border: #30363d;
+    --ok: #3fb950;
+    --danger: #f85149;
+    --warning-bg: #2e2a1a;
+    --warning-border: #9e6a03;
+    --error-bg: #3a1d1f;
   }
 }
 
@@ -34,28 +48,84 @@ body {
   max-width: 480px;
   margin: 0 auto;
   padding: max(24px, env(safe-area-inset-top)) 16px 24px;
-  text-align: center;
 }
 
-.app h1 {
-  color: var(--accent);
-  margin: 0 0 32px;
+button,
+input {
+  font: inherit;
+  color: inherit;
 }
 
-.clock {
-  font-size: 3.5rem;
-  font-variant-numeric: tabular-nums;
-  margin: 0;
-}
-
-.date {
+.muted {
   color: var(--muted);
-  margin: 4px 0 32px;
 }
 
-.hint {
-  color: var(--muted);
-  font-size: 0.9rem;
+.button {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.button-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.button-danger {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+
+.button-link-danger {
+  margin-right: auto;
+  border-color: transparent;
+  background: none;
+  color: var(--danger);
+}
+
+.icon-button {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.alert {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.alert ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.alert-warning {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+}
+
+.alert-error {
+  border-color: var(--danger);
+  background: var(--error-bg);
 }
 
 .env-badge {

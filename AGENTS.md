@@ -37,13 +37,16 @@ src/
     types.ts        # Interval, DayOff, Settings, DEFAULT_SETTINGS
     time.ts         # dia local, semana, período 26–25, dias úteis
     balance.ts      # trabalhado, meta, falta e excedente (dia e semana)
-    irregular.ts    # dias irregulares
+    irregular.ts    # dias irregulares e o texto de cada motivo
+    clock.ts        # cronômetro, título do dia, horas HH:MM e formulário de intervalo
     test-helpers.ts # at() e iv() para montar instantes e intervalos nos testes
     *.test.ts       # testes ao lado do código
   db/
     schema.ts       # Dexie (PontoDb): tabelas e índices
     repository.ts   # única porta de entrada para os dados (getRepository)
-  (próximos marcos) features/, components/
+  features/
+    today/          # tela Hoje: TodayScreen, IntervalSheet, useToday (dados da semana), useNow (relógio)
+  (próximos marcos) components/
 docs/               # produto, arquitetura, ADRs e specs
 .github/workflows/  # ci.yml (PRs) e deploy.yml (Pages)
 ```
