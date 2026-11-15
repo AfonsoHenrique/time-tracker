@@ -1,9 +1,9 @@
 import { differenceInCalendarDays, format, parseISO, startOfMinute } from 'date-fns'
-import { isDevOpsId, withDevOpsDefaults } from './devops'
+import { isDevOpsId, normalizeProject, withDevOpsDefaults } from './devops'
 import type { AppEnv } from './env'
 import { settingsProblem } from './settings'
 import { dayKey, isDayKey } from './time'
-import { DEFAULT_SETTINGS, type DayOff, type Interval, type Settings } from './types'
+import { DEFAULT_SETTINGS, PROJECT_MAX_LENGTH, type DayOff, type Interval, type Settings } from './types'
 
 /** Versão do formato do arquivo de backup. É independente da versão do schema do Dexie. */
 export const BACKUP_VERSION = 1
@@ -77,6 +77,13 @@ function readInterval(raw: unknown, n: number): Interval {
   if (raw.workItemId != null && !isDevOpsId(raw.workItemId)) fail('com work item inválido')
   if (raw.taskId != null && !isDevOpsId(raw.taskId)) fail('com task inválida')
   if (raw.declared !== undefined && typeof raw.declared !== 'boolean') fail('com "declarado" inválido')
+  let project = ''
+  if (raw.project != null) {
+    if (typeof raw.project !== 'string') fail('com projeto inválido')
+    const normalized = normalizeProject(raw.project as string)
+    if (!normalized.ok) return fail(`com projeto de mais de ${PROJECT_MAX_LENGTH} caracteres`)
+    project = normalized.value
+  }
   return withDevOpsDefaults({
     id: raw.id as string,
     start,
@@ -85,6 +92,7 @@ function readInterval(raw: unknown, n: number): Interval {
     workItemId: raw.workItemId,
     taskId: raw.taskId,
     declared: raw.declared,
+    project,
     createdAt: timestamp(raw.createdAt) ?? start,
     updatedAt: timestamp(raw.updatedAt) ?? start,
   })
@@ -114,7 +122,7 @@ function readSettings(raw: unknown): Settings {
 /**
  * Lê e valida um arquivo de backup. Não grava nada: quem chama mostra o resumo e só depois
  * substitui os dados. Intervalos sem os campos do Azure DevOps (backups antigos) ficam sem
- * work item, sem task e não declarados.
+ * work item, sem task, não declarados e sem projeto.
  */
 export function parseBackup(text: string): ParseResult {
   let json: unknown

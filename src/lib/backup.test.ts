@@ -18,7 +18,7 @@ const now = new Date(at('2026-11-15 18:00'))
 function sampleData(): BackupData {
   return {
     intervals: [
-      { ...iv('2026-11-09 08:00', '2026-11-09 12:00', 'daily'), workItemId: 123567, taskId: 123568, declared: true },
+      { ...iv('2026-11-09 08:00', '2026-11-09 12:00', 'daily'), workItemId: 123567, taskId: 123568, declared: true, project: 'Equipe IA' },
       iv('2026-11-09 13:00', '2026-11-09 17:30'),
       iv('2026-11-14 09:00'),
     ],
@@ -106,7 +106,7 @@ describe('buildBackup e parseBackup', () => {
     expect(result.ok && result.summary.env).toBe('hml')
   })
 
-  it('backup sem os campos do Azure DevOps fica com null, null e false (CA8)', () => {
+  it('backup sem os campos do Azure DevOps fica com null, null, false e projeto vazio (CA8)', () => {
     const old = {
       app: 'ponto',
       version: 1,
@@ -116,8 +116,18 @@ describe('buildBackup e parseBackup', () => {
       daysOff: [],
     }
     const result = parseBackup(text(old))
-    expect(result.ok && result.data.intervals[0]).toMatchObject({ workItemId: null, taskId: null, declared: false })
+    expect(result.ok && result.data.intervals[0]).toMatchObject({ workItemId: null, taskId: null, declared: false, project: '' })
     expect(result.ok && result.data.settings).toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('leva o projeto e recusa projeto com mais de 15 caracteres (CA8)', () => {
+    const base = buildBackup(sampleData(), now, 'prod')
+    const withProject = (project: unknown) =>
+      parseBackup(text({ ...base, intervals: [base.intervals[0], { ...base.intervals[1], project }] }))
+    const ok = withProject(' Equipe IA ')
+    expect(ok.ok && ok.data.intervals[1].project).toBe('Equipe IA')
+    expect(withProject('a'.repeat(16))).toEqual({ ok: false, error: 'Intervalo 2 com projeto de mais de 15 caracteres.' })
+    expect(withProject(42)).toEqual({ ok: false, error: 'Intervalo 2 com projeto inválido.' })
   })
 
   it('normaliza instantes para UTC no minuto', () => {
