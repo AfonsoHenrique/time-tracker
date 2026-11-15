@@ -4,9 +4,10 @@ import { BalanceStat, Stat } from '../../components/Stat'
 import { getRepository } from '../../db/repository'
 import { intervalMinutes, intervalsOfDay, summarizeDay, summarizeWeek } from '../../lib/balance'
 import { formatLastBackup, isBackupDue } from '../../lib/backup'
-import { formatDayTitle, formatElapsed, formatShortDay, formatTime } from '../../lib/clock'
+import { formatDayTitle, formatElapsed, formatForecast, formatShortDay, formatTime } from '../../lib/clock'
 import { formatDevOpsRefs } from '../../lib/devops'
 import { formatDuration } from '../../lib/duration'
+import { forecastDayEnd } from '../../lib/forecast'
 import { describeIrregularity, findIrregularities } from '../../lib/irregular'
 import { dayKey, isWorkDay, parseDayKey } from '../../lib/time'
 import type { Interval } from '../../lib/types'
@@ -80,6 +81,11 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
   const intervals = intervalsOfDay(weekIntervals, day)
   const summary = summarizeDay(day, weekIntervals, daysOff, settings, now)
   const week = summarizeWeek(day, weekIntervals, daysOff, settings, now)
+  // O intervalo aberto pode ser de outra semana; ele entra para a previsão saber que o dia está irregular.
+  const forecastIntervals = open ? [...weekIntervals.filter((interval) => interval.id !== open.id), open] : weekIntervals
+  const forecastText = isToday
+    ? formatForecast(forecastDayEnd({ date: day, intervals: forecastIntervals, target: summary.target, now }), day)
+    : null
   const problems = findIrregularities({ date: day, intervals, target: summary.target, now })
 
   const act = (action: () => Promise<unknown>) => {
@@ -126,6 +132,11 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
         <BalanceStat label="no dia" remaining={summary.remaining} extra={summary.extra} />
         <BalanceStat label="na semana" remaining={week.remaining} extra={week.extra} />
       </section>
+      {forecastText !== null && (
+        <p className="forecast-line" role="status">
+          {forecastText}
+        </p>
+      )}
       <p className="target-line muted">
         Meta do dia {formatDuration(summary.target)} · da semana {formatDuration(week.target)}
       </p>
