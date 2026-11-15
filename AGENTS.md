@@ -39,6 +39,7 @@ src/
     time.ts         # dia local, semana, período 26–25, dias úteis
     balance.ts      # trabalhado, meta, falta e excedente (dia, semana e qualquer faixa)
     irregular.ts    # dias irregulares e o texto de cada motivo
+    duration.ts     # H:MM (formatDuration) e horas decimais do Azure DevOps (formatDecimalHours)
     clock.ts        # cronômetro, títulos de dia e semana, horas HH:MM, formulário de intervalo e texto da previsão
     forecast.ts     # previsão do horário de saída do dia (com reserva de almoço)
     route.ts        # rota no hash da URL (#/hoje/…, #/semana/…, #/periodo/…, #/dados)
@@ -62,7 +63,7 @@ src/
     week/           # tela Semana: WeekScreen
     period/         # tela Período: PeriodScreen
     data/           # aba Dados: DataScreen (backup, restaurar, armazenamento) e DemoSection (só hml)
-  components/       # TabBar, Stat/BalanceStat: visuais, sem regra de negócio
+  components/       # TabBar, Stat/BalanceStat, DatePickerTitle: visuais, sem regra de negócio
 firebase/           # firestore.rules e testes nos emuladores
 docs/               # produto, arquitetura, ADRs e specs
 .github/workflows/  # ci.yml (PRs) e deploy.yml (Pages)

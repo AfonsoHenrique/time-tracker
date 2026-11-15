@@ -1,4 +1,5 @@
 import { addDays, addMonths } from 'date-fns'
+import { DatePickerTitle } from '../../components/DatePickerTitle'
 import { BalanceStat, Stat } from '../../components/Stat'
 import { summarizeRange } from '../../lib/balance'
 import { formatRangeTitle, formatShortDay } from '../../lib/clock'
@@ -25,11 +26,13 @@ export function PeriodScreen({ day: selected, onChangePeriod, onOpenWeek }: Prop
   const range = data?.range
   const isCurrent = range ? today >= range.start && today <= range.end : true
 
-  const shift = (amount: number) => {
+  const goTo = (anchor: string) => {
     if (!data) return
-    const anchor = dayKey(addMonths(parseDayKey(data.range.start), amount))
     const next = periodRange(anchor, data.settings.periodStartDay)
     onChangePeriod(today >= next.start && today <= next.end ? null : anchor)
+  }
+  const shift = (amount: number) => {
+    if (data) goTo(dayKey(addMonths(parseDayKey(data.range.start), amount)))
   }
 
   return (
@@ -38,7 +41,11 @@ export function PeriodScreen({ day: selected, onChangePeriod, onOpenWeek }: Prop
         <button type="button" className="icon-button" aria-label="Período anterior" onClick={() => shift(-1)}>
           ‹
         </button>
-        <h1 className="day-title">{range ? formatRangeTitle(range, now) : ' '}</h1>
+        {range ? (
+          <DatePickerTitle title={formatRangeTitle(range, now)} value={selected ?? today} onPick={goTo} />
+        ) : (
+          <h1 className="day-title"> </h1>
+        )}
         <button type="button" className="icon-button" aria-label="Próximo período" onClick={() => shift(1)}>
           ›
         </button>
