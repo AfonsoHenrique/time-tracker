@@ -142,6 +142,9 @@ Cada documento é o registro local mais `updatedAt` (do aparelho, decide o confl
 1. Criar o projeto no Firebase (plano Spark, gratuito) e ativar o Firestore.
 2. Em Authentication, ativar Google e Microsoft, e adicionar `afonsohenrique.github.io` aos domínios autorizados.
 3. Registrar um app no Microsoft Entra (portal do Azure) com o redirect `https://<projeto>.firebaseapp.com/__/auth/handler` e copiar o client id e o secret para o provedor Microsoft do Firebase.
+   - A conta Microsoft é **da empresa** e a Google é **pessoal**. O app fica registrado num diretório pessoal (o portal do Azure cria um com uma conta pessoal), e não no da empresa, com o tipo "contas em qualquer diretório organizacional e contas pessoais". Assim ele não depende de permissão para criar apps no diretório da empresa.
+   - Se a empresa exigir aprovação de um administrador para apps de fora, o login Microsoft mostra "Aprovação do administrador necessária". O Google continua funcionando, e a sincronização não depende da Microsoft.
+   - Por isso a conta principal é a Google: o primeiro login é com o Google, e a Microsoft é vinculada depois (R4). Se a conta da empresa deixar de existir, os dados continuam acessíveis.
 4. Mandar a configuração web do Firebase (o bloco `firebaseConfig`).
 
 ## Tarefas
