@@ -18,7 +18,8 @@ function inRange(interval: Interval, range: DayRange): boolean {
 /**
  * Linhas para a planilha: uma por intervalo fechado que começa na faixa, do mais recente para o
  * mais antigo. A linha fica no dia do início, mesmo que o intervalo passe da meia-noite.
- * TASK, Projeto e Detalhe ficam vazios para o usuário preencher.
+ * TASK leva o id da task do Azure DevOps, quando houver. Projeto e Detalhe ficam vazios para o
+ * usuário preencher.
  */
 export function exportRows(intervals: readonly Interval[], range: DayRange): string[][] {
   return intervals
@@ -33,7 +34,7 @@ export function exportRows(intervals: readonly Interval[], range: DayRange): str
         formatTime(interval.end as string),
         formatDuration(intervalMinutes(interval, start)),
         interval.note,
-        '',
+        interval.taskId === null ? '' : String(interval.taskId),
         '',
         '',
       ]

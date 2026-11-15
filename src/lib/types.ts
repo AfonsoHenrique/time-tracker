@@ -8,8 +8,21 @@ export interface Interval {
   start: string
   end: string | null
   note: string
+  /** Work item do Azure DevOps ao qual o intervalo pertence (ex.: 123567). `null` = sem work item. */
+  workItemId: number | null
+  /** Task filha do work item, onde as horas são declaradas (ex.: 123568). `null` = sem task. */
+  taskId: number | null
+  /** As horas deste intervalo já foram lançadas no Azure DevOps. */
+  declared: boolean
   createdAt: string
   updatedAt: string
+}
+
+/** Valores dos campos do Azure DevOps para um intervalo sem nenhum deles preenchido. */
+export const EMPTY_DEVOPS_FIELDS: Readonly<Pick<Interval, 'workItemId' | 'taskId' | 'declared'>> = {
+  workItemId: null,
+  taskId: null,
+  declared: false,
 }
 
 /** Dia sem meta (feriado, folga): tira a meta diária da semana. `date` é `AAAA-MM-DD` no fuso local. */
