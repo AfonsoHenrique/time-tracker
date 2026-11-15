@@ -163,6 +163,7 @@ describe('isBackupDue e formatLastBackup', () => {
 describe('nomes e datas', () => {
   it('nome do arquivo e data brasileira', () => {
     expect(backupFileName(now)).toBe('ponto-backup-2026-11-15.json')
+    expect(backupFileName(now, true)).toBe('ponto-backup-demo-2026-11-15.json')
     expect(formatDayBr('2026-11-09')).toBe('09/11/2026')
     expect(formatExportedAt(at('2026-11-15 18:05'))).toBe('15/11/2026 às 18:05')
     expect(formatExportedAt('')).toBe('')

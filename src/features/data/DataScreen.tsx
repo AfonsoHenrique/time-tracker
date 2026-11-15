@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { getRepository } from '../../db/repository'
 import {
   backupFileName,
@@ -11,7 +11,7 @@ import {
   type BackupData,
   type BackupSummary,
 } from '../../lib/backup'
-import { APP_ENV, type AppEnv } from '../../lib/env'
+import { APP_ENV, IS_DEMO, type AppEnv } from '../../lib/env'
 import { readLastBackup, saveLastBackup } from '../shared/lastBackup'
 import { useNow } from '../shared/useNow'
 import './data.css'
@@ -19,6 +19,10 @@ import './data.css'
 type Feedback = { kind: 'ok' | 'error'; text: string } | null
 
 const ENV_LABEL: Record<AppEnv, string> = { prod: 'produção', hml: 'homologação' }
+
+// Só a homologação carrega o bloco do modo demo; na produção ele nem entra no bundle (spec 010).
+// A condição repete `import.meta.env` em vez de usar `IS_HML` para o build conseguir cortar o import.
+const DemoSection = import.meta.env.VITE_APP_ENV === 'hml' ? lazy(() => import('./DemoSection')) : null
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
@@ -30,6 +34,11 @@ export function DataScreen() {
       <BackupSection />
       <RestoreSection />
       <StorageSection />
+      {DemoSection && (
+        <Suspense fallback={null}>
+          <DemoSection />
+        </Suspense>
+      )}
     </main>
   )
 }
@@ -50,7 +59,7 @@ function BackupSection() {
       const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
       const link = document.createElement('a')
       link.href = url
-      link.download = backupFileName(exportedAt)
+      link.download = backupFileName(exportedAt, IS_DEMO)
       link.click()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
       saveLastBackup(exportedAt)
