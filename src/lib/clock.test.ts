@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   formatDayTitle,
   formatElapsed,
+  formatForecast,
   formatShortDay,
   formatTime,
   formatWeekdayShort,
@@ -213,5 +214,43 @@ describe('formatRangeTitle com períodos', () => {
     const now = new Date(at('2026-11-08 10:00'))
     expect(formatRangeTitle({ start: '2026-10-26', end: '2026-11-25' }, now)).toBe('26 de outubro a 25 de novembro')
     expect(formatRangeTitle({ start: '2026-11-26', end: '2026-12-25' }, now)).toBe('26 de novembro a 25 de dezembro')
+  })
+})
+
+describe('formatForecast', () => {
+  const day = '2026-11-09'
+  const d = (local: string) => new Date(at(local))
+
+  it('sem previsão não mostra nada', () => {
+    expect(formatForecast({ kind: 'none' }, day)).toBeNull()
+  })
+
+  it('dentro, com almoço reservado', () => {
+    const text = formatForecast({ kind: 'forecast', at: d(`${day} 17:32`), lunchMinutes: 60, returnBy: null }, day)
+    expect(text).toBe('Saída prevista 17:32 · com 1:00 de almoço')
+  })
+
+  it('fora, com a pausa contando como almoço', () => {
+    const text = formatForecast(
+      { kind: 'forecast', at: d(`${day} 17:00`), lunchMinutes: 40, returnBy: d(`${day} 13:00`) },
+      day,
+    )
+    expect(text).toBe('Saída prevista 17:00 · se voltar até 13:00')
+  })
+
+  it('sem almoço, só a hora', () => {
+    expect(formatForecast({ kind: 'forecast', at: d(`${day} 16:00`), lunchMinutes: 0, returnBy: null }, day)).toBe(
+      'Saída prevista 16:00',
+    )
+  })
+
+  it('depois da meia-noite ganha "(amanhã)"', () => {
+    expect(formatForecast({ kind: 'forecast', at: d('2026-11-10 00:30'), lunchMinutes: 0, returnBy: null }, day)).toBe(
+      'Saída prevista 00:30 (amanhã)',
+    )
+  })
+
+  it('meta cumprida', () => {
+    expect(formatForecast({ kind: 'done', at: d(`${day} 17:00`) }, day)).toBe('Meta fechada às 17:00')
   })
 })

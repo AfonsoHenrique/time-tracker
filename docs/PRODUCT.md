@@ -28,7 +28,7 @@ Uso pessoal de um profissional PJ, sem controle formal da empresa. O app serve p
 
 ## Telas
 
-- **Hoje**: botão Entrar/Sair, cronômetro enquanto estiver dentro, trabalhado hoje, falta no dia, falta na semana, lista de intervalos, setas ‹ › para trocar de dia, "dia sem meta". Um aviso discreto lembra de fazer backup quando o último tem mais de 14 dias, ou quando nunca houve backup e já há dados.
+- **Hoje**: botão Entrar/Sair, cronômetro enquanto estiver dentro, trabalhado hoje, falta no dia, falta na semana, previsão do horário de saída (reserva 1h de almoço enquanto ele ainda é provável; ver spec 009), lista de intervalos, setas ‹ › para trocar de dia, "dia sem meta". Um aviso discreto lembra de fazer backup quando o último tem mais de 14 dias, ou quando nunca houve backup e já há dados.
 - **Semana**: uma linha por dia com trabalhado, meta e alerta de irregularidade; totais; setas ‹ › para trocar de semana.
 - **Período 26–25**: totais e semanas, com exportação.
 - **Semana** também exporta os seus dias, porque a planilha é preenchida por semana.

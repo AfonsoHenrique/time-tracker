@@ -39,7 +39,8 @@ src/
     time.ts         # dia local, semana, período 26–25, dias úteis
     balance.ts      # trabalhado, meta, falta e excedente (dia, semana e qualquer faixa)
     irregular.ts    # dias irregulares e o texto de cada motivo
-    clock.ts        # cronômetro, títulos de dia e semana, horas HH:MM e formulário de intervalo
+    clock.ts        # cronômetro, títulos de dia e semana, horas HH:MM, formulário de intervalo e texto da previsão
+    forecast.ts     # previsão do horário de saída do dia (com reserva de almoço)
     route.ts        # rota no hash da URL (#/hoje/…, #/semana/…, #/periodo/…, #/dados)
     export.ts       # linhas da planilha HORAS.xlsx, TSV e CSV
     devops.ts       # ids de work item/task, projeto e padrões para dados antigos
