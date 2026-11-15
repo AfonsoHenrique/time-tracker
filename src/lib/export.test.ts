@@ -14,6 +14,17 @@ describe('exportRows', () => {
     expect(rows[0]).toHaveLength(EXPORT_HEADER.length)
   })
 
+  it('spec 005 CA5: TASK leva o id da task; work item e declarado não viram coluna', () => {
+    const daily = iv('2026-11-09 09:00', '2026-11-09 09:30', 'Daily equipe IA', {
+      workItemId: 123567,
+      taskId: 123568,
+      declared: true,
+    })
+    expect(exportRows([daily], week)).toEqual([
+      ['seg', '09/11/2026', '09:00', '09:30', '0:30', 'Daily equipe IA', '123568', '', ''],
+    ])
+  })
+
   it('ordena por data entre dias diferentes e usa o dia da semana em minúsculas', () => {
     const rows = exportRows([iv('2026-11-09 08:00', '2026-11-09 09:00'), iv('2026-11-14 10:00', '2026-11-14 11:15')], week)
     expect(rows.map((row) => [row[0], row[1], row[4]])).toEqual([

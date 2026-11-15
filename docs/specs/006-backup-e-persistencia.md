@@ -2,7 +2,7 @@
 
 - **Status**: Rascunho
 - **Marco**: 6
-- **Relacionado**: [PRODUCT.md](../PRODUCT.md), [ADR 0001](../adr/0001-dados-locais-indexeddb.md), [005-azure-devops-no-intervalo](005-azure-devops-no-intervalo.md) (PR #12)
+- **Relacionado**: [PRODUCT.md](../PRODUCT.md), [ADR 0001](../adr/0001-dados-locais-indexeddb.md), [005-azure-devops-no-intervalo](005-azure-devops-no-intervalo.md)
 
 ## Contexto
 
@@ -45,7 +45,7 @@ Na fase 1, os dados vivem só no navegador de cada aparelho. Se o Chrome limpar 
 - O repositório ganha `exportAll()` e `replaceAll(data)`. O `replaceAll` limpa e regrava as três tabelas numa única transação Dexie, para cumprir R5.
 - A data do último backup fica no `localStorage`, com uma chave por ambiente (`ponto:lastBackupAt` e `ponto-hml:lastBackupAt`). Ela é só uma informação deste aparelho e não faz parte dos dados. Por isso não muda o schema do Dexie.
 - O backup não muda o schema e não precisa de migração. A versão do formato do backup (`version: 1`) é independente da versão do schema do Dexie.
-- Depende do PR #12 (spec 005), que acrescenta os campos do Azure DevOps e o `withDevOpsDefaults`. A implementação começa depois que ele entrar na `develop`.
+- Os campos do Azure DevOps e o `withDevOpsDefaults` vieram da spec 005 (PR #12, já na `develop`). O schema do Dexie está na versão 2, e o backup grava os intervalos já completos.
 - Rota `#/dados` e aba **Dados** na `TabBar`.
 - O download usa o mesmo caminho do CSV (`Blob` e um link temporário). Para restaurar, um `<input type="file" accept="application/json">` lê o arquivo com `file.text()`.
 

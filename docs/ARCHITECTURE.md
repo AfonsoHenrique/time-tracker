@@ -51,6 +51,9 @@ interface Interval {
   start: string       // ISO 8601 em UTC, no minuto exato (ex.: 2026-11-09T11:00:00.000Z)
   end: string | null  // null = em andamento
   note: string
+  workItemId: number | null  // work item do Azure DevOps (ex.: 123567)
+  taskId: number | null      // task filha onde as horas são declaradas (ex.: 123568)
+  declared: boolean          // horas já lançadas no Azure DevOps
   createdAt: string
   updatedAt: string
 }
@@ -71,10 +74,16 @@ O dia de um intervalo é o dia local do seu `start`.
 
 Os instantes são guardados em UTC, sempre no mesmo formato, para que a ordem do texto seja a ordem do tempo. Assim o índice `start` do IndexedDB responde às buscas por faixa de dias, e o dia local é calculado na leitura, no fuso do aparelho. O repositório corta os segundos ao gravar: o app guarda o minuto exato e não arredonda nada.
 
+Versões do schema (`src/db/schema.ts`):
+
+- **1**: tabelas `intervals`, `daysOff` e `settings`.
+- **2** (spec 005): campos do Azure DevOps no intervalo. Mesmos índices; o `upgrade` aplica `withDevOpsDefaults` de `src/lib/devops.ts`, que também serve para importar backups antigos.
+
 Regras de gravação (`src/db/repository.ts`):
 
 - Só pode existir um intervalo em andamento. Abrir outro, ou reabrir um fechado, falha com `RepositoryError` de código `open-interval-exists`.
 - O fim não pode ser antes do início (`invalid-interval`).
+- Work item e task são inteiros positivos ou `null` (`invalid-interval`). Num patch, `undefined` mantém o valor e `null` limpa.
 - Intervalos fechados podem se sobrepor: o destaque de dia irregular avisa, e o usuário corrige.
 - O intervalo aberto é achado por filtro, porque o IndexedDB não indexa `null`.
 

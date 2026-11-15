@@ -1,3 +1,4 @@
+import Dexie from 'dexie'
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { at } from '../lib/test-helpers'
@@ -163,5 +164,71 @@ describe('configurações', () => {
 
   it('o erro é um RepositoryError', async () => {
     await expect(repo.saveSettings({ periodStartDay: 0 })).rejects.toBeInstanceOf(RepositoryError)
+  })
+})
+
+describe('campos do Azure DevOps (spec 005)', () => {
+  it('CA1: grava work item, task e declarado; o padrão é vazio e não declarado', async () => {
+    const daily = await repo.createInterval({
+      start: '2026-11-09T09:00',
+      end: '2026-11-09T09:30',
+      note: 'Daily equipe IA',
+      workItemId: 123567,
+      taskId: 123568,
+      declared: true,
+    })
+    expect(daily).toMatchObject({ workItemId: 123567, taskId: 123568, declared: true })
+    expect(await repo.listIntervals('2026-11-09', '2026-11-09')).toEqual([daily])
+
+    const plain = await repo.startInterval(new Date('2026-11-09T10:00'))
+    expect(plain).toMatchObject({ workItemId: null, taskId: null, declared: false })
+  })
+
+  it('CA2: editar muda só o que veio; null limpa o id', async () => {
+    const { id } = await repo.createInterval({
+      start: '2026-11-09T09:00',
+      end: '2026-11-09T09:30',
+      workItemId: 123567,
+      taskId: 123568,
+    })
+    expect(await repo.updateInterval(id, { declared: true })).toMatchObject({
+      workItemId: 123567,
+      taskId: 123568,
+      declared: true,
+    })
+    expect(await repo.updateInterval(id, { taskId: null })).toMatchObject({ workItemId: 123567, taskId: null })
+  })
+
+  it('sair mantém os campos do intervalo aberto', async () => {
+    await repo.createInterval({ start: '2026-11-09T09:00', workItemId: 123567 })
+    expect(await repo.stopInterval(new Date('2026-11-09T09:30'))).toMatchObject({ workItemId: 123567 })
+  })
+
+  it('CA3: id que não é inteiro positivo falha com invalid-interval', async () => {
+    await expectCode(repo.createInterval({ start: '2026-11-09T09:00', workItemId: 0 }), 'invalid-interval')
+    await expectCode(repo.createInterval({ start: '2026-11-09T09:00', taskId: 1.5 }), 'invalid-interval')
+    const { id } = await repo.createInterval({ start: '2026-11-09T09:00', end: '2026-11-09T09:30' })
+    await expectCode(repo.updateInterval(id, { taskId: -2 }), 'invalid-interval')
+  })
+
+  it('CA4: abrir um banco da versão 1 completa os intervalos que já existiam', async () => {
+    const indexedDB = new IDBFactory()
+    const v1 = new Dexie('migracao', { indexedDB, IDBKeyRange })
+    v1.version(1).stores({ intervals: 'id, start', daysOff: 'date', settings: 'id' })
+    const old = {
+      id: 'antigo',
+      start: at('2026-11-09 08:00'),
+      end: at('2026-11-09 12:00'),
+      note: 'daily',
+      createdAt: at('2026-11-09 08:00'),
+      updatedAt: at('2026-11-09 12:00'),
+    }
+    await v1.table('intervals').add(old)
+    v1.close()
+
+    const migrated = createRepository(new PontoDb('migracao', { indexedDB, IDBKeyRange }))
+    expect(await migrated.listIntervals('2026-11-09', '2026-11-09')).toEqual([
+      { ...old, workItemId: null, taskId: null, declared: false },
+    ])
   })
 })

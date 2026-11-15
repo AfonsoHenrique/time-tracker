@@ -62,7 +62,7 @@ describe('parseTimeInput', () => {
 })
 
 describe('readIntervalForm', () => {
-  const base = { day: '2026-11-09', endDay: '2026-11-09', note: '' }
+  const base = { day: '2026-11-09', endDay: '2026-11-09', note: '', workItem: '', task: '', declared: false }
 
   it('lê início, fim e observação sem arredondar', () => {
     const result = readIntervalForm({ ...base, start: '08:07', end: '11:32', note: '  daily  ' })
@@ -71,6 +71,33 @@ describe('readIntervalForm', () => {
       start: new Date(at('2026-11-09 08:07')),
       end: new Date(at('2026-11-09 11:32')),
       note: 'daily',
+      workItemId: null,
+      taskId: null,
+      declared: false,
+    })
+  })
+
+  it('spec 005 CA1: lê work item, task e declarado', () => {
+    const result = readIntervalForm({
+      ...base,
+      start: '09:00',
+      end: '09:30',
+      note: 'Daily equipe IA',
+      workItem: ' 123567 ',
+      task: '#123568',
+      declared: true,
+    })
+    expect(result).toMatchObject({ ok: true, workItemId: 123567, taskId: 123568, declared: true })
+  })
+
+  it('spec 005 CA3: work item ou task que não são número são erro', () => {
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', workItem: 'abc' })).toEqual({
+      ok: false,
+      error: 'O work item deve ser um número, ex.: 123567.',
+    })
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', task: '12.5' })).toEqual({
+      ok: false,
+      error: 'A task deve ser um número, ex.: 123568.',
     })
   })
 
@@ -105,6 +132,9 @@ describe('intervalToForm', () => {
       start: '',
       end: '',
       note: '',
+      workItem: '',
+      task: '',
+      declared: false,
     })
   })
 
@@ -115,6 +145,22 @@ describe('intervalToForm', () => {
       start: '08:00',
       end: '12:00',
       note: 'daily',
+      workItem: '',
+      task: '',
+      declared: false,
+    })
+  })
+
+  it('spec 005: preenche work item, task e declarado', () => {
+    const interval = iv('2026-11-09 09:00', '2026-11-09 09:30', 'Daily equipe IA', {
+      workItemId: 123567,
+      taskId: 123568,
+      declared: true,
+    })
+    expect(intervalToForm('2026-11-09', interval)).toMatchObject({
+      workItem: '123567',
+      task: '123568',
+      declared: true,
     })
   })
 
