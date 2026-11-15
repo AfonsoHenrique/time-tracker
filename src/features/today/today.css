@@ -123,6 +123,12 @@
 
 .interval-duration {
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.interval-decimal {
+  color: var(--muted);
+  font-weight: 400;
 }
 
 .interval-note {

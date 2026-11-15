@@ -28,9 +28,9 @@ Uso pessoal de um profissional PJ, sem controle formal da empresa. O app serve p
 
 ## Telas
 
-- **Hoje**: botão Entrar/Sair, cronômetro enquanto estiver dentro, trabalhado hoje, falta no dia, falta na semana, previsão do horário de saída (reserva 1h de almoço enquanto ele ainda é provável; ver spec 009), lista de intervalos, setas ‹ › para trocar de dia, "dia sem meta". Um aviso discreto lembra de fazer backup quando o último tem mais de 14 dias, ou quando nunca houve backup e já há dados.
-- **Semana**: uma linha por dia com trabalhado, meta e alerta de irregularidade; totais; setas ‹ › para trocar de semana.
-- **Período 26–25**: totais e semanas, com exportação.
+- **Hoje**: botão Entrar/Sair, cronômetro enquanto estiver dentro, trabalhado hoje, falta no dia, falta na semana, previsão do horário de saída (reserva 1h de almoço enquanto ele ainda é provável; ver spec 009), lista de intervalos (cada um com a duração em H:MM e em horas decimais para o Azure DevOps, ex.: `1:30 · 1.5 h`; ver spec 011), setas ‹ › para trocar de dia, calendário no título para pular para qualquer data, "dia sem meta". Um aviso discreto lembra de fazer backup quando o último tem mais de 14 dias, ou quando nunca houve backup e já há dados.
+- **Semana**: uma linha por dia com trabalhado, meta e alerta de irregularidade; totais; setas ‹ › para trocar de semana e calendário no título para pular para a semana de qualquer data.
+- **Período 26–25**: totais e semanas, com exportação; setas e calendário no título para trocar de período.
 - **Semana** também exporta os seus dias, porque a planilha é preenchida por semana.
 - **Dados**: baixar backup em JSON (`ponto-backup-AAAA-MM-DD.json`, com intervalos, dias sem meta e configurações), restaurar um backup (mostra um resumo e pede confirmação antes de substituir tudo) e ver se o navegador prometeu não apagar os dados. O backup serve para trocar de aparelho e para levar dados entre produção e homologação. Só na homologação, a aba também tem o **modo demo**, que mostra o app com uma semana e meia de dados fictícios num banco separado, sem tocar nos dados reais (spec 010).
 

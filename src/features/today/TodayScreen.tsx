@@ -1,12 +1,13 @@
 import { addDays } from 'date-fns'
 import { useEffect, useState } from 'react'
+import { DatePickerTitle } from '../../components/DatePickerTitle'
 import { BalanceStat, Stat } from '../../components/Stat'
 import { getRepository } from '../../db/repository'
 import { intervalMinutes, intervalsOfDay, summarizeDay, summarizeWeek } from '../../lib/balance'
 import { formatLastBackup, isBackupDue } from '../../lib/backup'
 import { formatDayTitle, formatElapsed, formatForecast, formatShortDay, formatTime } from '../../lib/clock'
 import { formatDevOpsRefs } from '../../lib/devops'
-import { formatDuration } from '../../lib/duration'
+import { formatDecimalHours, formatDuration } from '../../lib/duration'
 import { forecastDayEnd } from '../../lib/forecast'
 import { describeIrregularity, findIrregularities } from '../../lib/irregular'
 import { dayKey, isWorkDay, parseDayKey } from '../../lib/time'
@@ -43,7 +44,7 @@ export function TodayScreen({ day: selected, onChangeDay }: Props) {
         <button type="button" className="icon-button" aria-label="Dia anterior" onClick={() => shift(-1)}>
           ‹
         </button>
-        <h1 className="day-title">{formatDayTitle(day, now)}</h1>
+        <DatePickerTitle title={formatDayTitle(day, now)} value={day} onPick={goTo} />
         <button type="button" className="icon-button" aria-label="Próximo dia" onClick={() => shift(1)}>
           ›
         </button>
@@ -185,7 +186,10 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
                   <span className="interval-time">
                     {formatTime(interval.start)} – {interval.end === null ? 'agora' : formatTime(interval.end)}
                   </span>
-                  <span className="interval-duration">{formatDuration(intervalMinutes(interval, now))}</span>
+                  <span className="interval-duration">
+                    {formatDuration(intervalMinutes(interval, now))}
+                    <span className="interval-decimal"> · {formatDecimalHours(intervalMinutes(interval, now))}</span>
+                  </span>
                   {interval.note && <span className="interval-note">{interval.note}</span>}
                   <DevOpsLine interval={interval} />
                 </button>

@@ -43,7 +43,7 @@ Navegação:
 - A tela e o dia ficam no hash da URL: `#/hoje`, `#/hoje/2026-11-10`, `#/semana`, `#/semana/2026-11-02`, `#/periodo`, `#/periodo/2026-11-10` e `#/dados` (sem data). Sem data, a tela segue hoje ou a semana atual. `src/lib/route.ts` lê e escreve o hash, e `useRoute` escuta `hashchange`. Não há biblioteca de roteamento.
 - Abrir uma semana a partir do Período também cria entrada no histórico.
 - Hash, e não caminho, porque o GitHub Pages não reescreve caminhos para o `index.html`, e o service worker já serve a página do app.
-- Abrir um dia a partir da Semana cria uma entrada no histórico, então o botão voltar do Android retorna à mesma semana. As setas e os botões "Voltar para hoje" e "Esta semana" substituem a entrada atual, para o voltar não passar dia por dia.
+- Abrir um dia a partir da Semana cria uma entrada no histórico, então o botão voltar do Android retorna à mesma semana. As setas, o calendário do título (`DatePickerTitle`) e os botões "Voltar para hoje" e "Esta semana" substituem a entrada atual, para o voltar não passar dia por dia.
 
 ## Modelo de dados
 
