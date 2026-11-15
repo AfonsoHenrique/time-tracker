@@ -1,6 +1,7 @@
 import Dexie from 'dexie'
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { buildBackup, parseBackup } from '../lib/backup'
 import { at } from '../lib/test-helpers'
 import { DEFAULT_SETTINGS } from '../lib/types'
 import { createRepository, RepositoryError, type Repository } from './repository'
@@ -230,5 +231,59 @@ describe('campos do Azure DevOps (spec 005)', () => {
     expect(await migrated.listIntervals('2026-11-09', '2026-11-09')).toEqual([
       { ...old, workItemId: null, taskId: null, declared: false },
     ])
+  })
+})
+
+describe('backup (spec 006)', () => {
+  async function fill(target: Repository) {
+    await target.createInterval({ start: '2026-11-09T08:00', end: '2026-11-09T12:00', note: 'manhã' })
+    await target.createInterval({ start: '2026-11-09T13:00', end: '2026-11-09T17:00', workItemId: 123567, taskId: 123568, declared: true })
+    await target.startInterval(new Date('2026-11-10T08:00'))
+    await target.setDayOff('2026-11-14', 'Folga')
+  }
+
+  it('CA1: baixar e restaurar num banco vazio deixa os dados iguais, com os mesmos ids', async () => {
+    await fill(repo)
+    const before = await repo.exportAll()
+    expect(before.intervals).toHaveLength(3)
+
+    const file = JSON.stringify(buildBackup(before, new Date(), 'prod'))
+    const parsed = parseBackup(file)
+    if (!parsed.ok) throw new Error(parsed.error)
+
+    const empty = createRepository(new PontoDb('vazio', { indexedDB: new IDBFactory(), IDBKeyRange }))
+    await empty.replaceAll(parsed.data)
+    expect(await empty.exportAll()).toEqual(before)
+    expect(await empty.countIntervals()).toBe(3)
+    expect(await empty.getOpenInterval()).toMatchObject({ start: at('2026-11-10 08:00') })
+  })
+
+  it('restaurar substitui tudo, inclusive as configurações', async () => {
+    await fill(repo)
+    await repo.saveSettings({ periodStartDay: 1 })
+    await repo.replaceAll({ intervals: [], daysOff: [], settings: DEFAULT_SETTINGS })
+    expect(await repo.countIntervals()).toBe(0)
+    expect(await repo.listDaysOff('2026-11-01', '2026-11-30')).toEqual([])
+    expect(await repo.getSettings()).toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('R5: se a gravação falha no meio, os dados anteriores continuam lá', async () => {
+    await fill(repo)
+    const before = await repo.exportAll()
+    const [first] = before.intervals
+    // Dois intervalos com o mesmo id: o bulkAdd falha depois de a transação já ter limpado as tabelas.
+    const broken = { intervals: [first, first], daysOff: [], settings: DEFAULT_SETTINGS }
+    await expect(repo.replaceAll(broken)).rejects.toThrow()
+    expect(await repo.exportAll()).toEqual(before)
+  })
+
+  it('recusa configurações inválidas sem mexer nos dados', async () => {
+    await fill(repo)
+    const before = await repo.exportAll()
+    await expectCode(
+      repo.replaceAll({ intervals: [], daysOff: [], settings: { ...DEFAULT_SETTINGS, periodStartDay: 31 } }),
+      'invalid-settings',
+    )
+    expect(await repo.exportAll()).toEqual(before)
   })
 })

@@ -28,11 +28,11 @@ Uso pessoal de um profissional PJ, sem controle formal da empresa. O app serve p
 
 ## Telas
 
-- **Hoje**: botão Entrar/Sair, cronômetro enquanto estiver dentro, trabalhado hoje, falta no dia, falta na semana, lista de intervalos, setas ‹ › para trocar de dia, "dia sem meta".
+- **Hoje**: botão Entrar/Sair, cronômetro enquanto estiver dentro, trabalhado hoje, falta no dia, falta na semana, lista de intervalos, setas ‹ › para trocar de dia, "dia sem meta". Um aviso discreto lembra de fazer backup quando o último tem mais de 14 dias, ou quando nunca houve backup e já há dados.
 - **Semana**: uma linha por dia com trabalhado, meta e alerta de irregularidade; totais; setas ‹ › para trocar de semana.
 - **Período 26–25**: totais e semanas, com exportação.
 - **Semana** também exporta os seus dias, porque a planilha é preenchida por semana.
-- **Dados**: backup e restauração em JSON.
+- **Dados**: baixar backup em JSON (`ponto-backup-AAAA-MM-DD.json`, com intervalos, dias sem meta e configurações), restaurar um backup (mostra um resumo e pede confirmação antes de substituir tudo) e ver se o navegador prometeu não apagar os dados. O backup serve para trocar de aparelho e para levar dados entre produção e homologação.
 
 ## Dias irregulares
 

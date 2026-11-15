@@ -21,6 +21,6 @@ Status: Rascunho → Pronta → Em andamento → Concluída.
 | [003-semana-e-navegacao](003-semana-e-navegacao.md) | 4. Semana e navegação | Concluída |
 | [004-periodo-e-exportacao](004-periodo-e-exportacao.md) | 5. Período e exportação | Concluída |
 | [005-azure-devops-no-intervalo](005-azure-devops-no-intervalo.md) | 5.1. Campos do Azure DevOps no intervalo | Concluída |
-| [006-backup-e-persistencia](006-backup-e-persistencia.md) | 6. Backup e persistência | Rascunho |
+| [006-backup-e-persistencia](006-backup-e-persistencia.md) | 6. Backup e persistência | Concluída |
 
-Com a 006, a fase 1 fica completa.
+Com a 006, a fase 1 está completa.

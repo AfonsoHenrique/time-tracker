@@ -39,19 +39,22 @@ src/
     balance.ts      # trabalhado, meta, falta e excedente (dia, semana e qualquer faixa)
     irregular.ts    # dias irregulares e o texto de cada motivo
     clock.ts        # cronômetro, títulos de dia e semana, horas HH:MM e formulário de intervalo
-    route.ts        # rota no hash da URL (#/hoje/…, #/semana/…, #/periodo/…)
+    route.ts        # rota no hash da URL (#/hoje/…, #/semana/…, #/periodo/…, #/dados)
     export.ts       # linhas da planilha HORAS.xlsx, TSV e CSV
     devops.ts       # ids de work item/task do Azure DevOps e padrões para dados antigos
+    settings.ts     # validação das configurações (repositório e backup)
+    backup.ts       # arquivo de backup: montar, validar, resumo e aviso de backup
     test-helpers.ts # at() e iv() para montar instantes e intervalos nos testes
     *.test.ts       # testes ao lado do código
   db/
     schema.ts       # Dexie (PontoDb): tabelas, índices e migrações (versão 2)
     repository.ts   # única porta de entrada para os dados (getRepository)
   features/
-    shared/         # useRangeData (semana ou período), useNow, useRoute, ExportPanel, errors
+    shared/         # useRangeData (semana ou período), useNow, useRoute, ExportPanel, errors, lastBackup
     today/          # tela Hoje: TodayScreen, IntervalSheet
     week/           # tela Semana: WeekScreen
     period/         # tela Período: PeriodScreen
+    data/           # aba Dados: DataScreen (backup, restaurar, armazenamento)
   components/       # TabBar, Stat/BalanceStat: visuais, sem regra de negócio
 docs/               # produto, arquitetura, ADRs e specs
 .github/workflows/  # ci.yml (PRs) e deploy.yml (Pages)

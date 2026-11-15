@@ -1,6 +1,8 @@
 import { parseISO, startOfMinute } from 'date-fns'
+import type { BackupData } from '../lib/backup'
 import { isDevOpsId } from '../lib/devops'
 import { dayEndInstant, dayStartInstant, isDayKey } from '../lib/time'
+import { settingsProblem } from '../lib/settings'
 import { DEFAULT_SETTINGS, type DayOff, type Interval, type Settings } from '../lib/types'
 import { PontoDb, SETTINGS_ID } from './schema'
 
@@ -73,16 +75,8 @@ function assertDayKey(date: string) {
 }
 
 function validateSettings(settings: Settings) {
-  const { dailyTargetMinutes, workDays, periodStartDay } = settings
-  if (!Number.isInteger(dailyTargetMinutes) || dailyTargetMinutes < 0) {
-    throw new RepositoryError('invalid-settings', 'A meta diária deve ser um número inteiro de minutos, zero ou mais.')
-  }
-  if (new Set(workDays).size !== workDays.length || workDays.some((d) => !Number.isInteger(d) || d < 1 || d > 7)) {
-    throw new RepositoryError('invalid-settings', 'Os dias úteis devem ser números de 1 (segunda) a 7 (domingo), sem repetir.')
-  }
-  if (!Number.isInteger(periodStartDay) || periodStartDay < 1 || periodStartDay > 28) {
-    throw new RepositoryError('invalid-settings', 'O período mensal deve começar entre os dias 1 e 28.')
-  }
+  const problem = settingsProblem(settings)
+  if (problem) throw new RepositoryError('invalid-settings', problem)
 }
 
 export function createRepository(db: PontoDb) {
@@ -94,6 +88,15 @@ export function createRepository(db: PontoDb) {
   async function assertNoOtherOpen(exceptId?: string) {
     if (await findOpenInterval(exceptId)) {
       throw new RepositoryError('open-interval-exists', 'Já existe um intervalo em andamento.')
+    }
+  }
+
+  async function getSettingsIn(): Promise<Settings> {
+    const row = await db.settings.get(SETTINGS_ID)
+    return {
+      dailyTargetMinutes: row?.dailyTargetMinutes ?? DEFAULT_SETTINGS.dailyTargetMinutes,
+      workDays: [...(row?.workDays ?? DEFAULT_SETTINGS.workDays)],
+      periodStartDay: row?.periodStartDay ?? DEFAULT_SETTINGS.periodStartDay,
     }
   }
 
@@ -197,14 +200,7 @@ export function createRepository(db: PontoDb) {
     },
 
     /** Configurações salvas, com os valores padrão no que não foi alterado. */
-    async getSettings(): Promise<Settings> {
-      const row = await db.settings.get(SETTINGS_ID)
-      return {
-        dailyTargetMinutes: row?.dailyTargetMinutes ?? DEFAULT_SETTINGS.dailyTargetMinutes,
-        workDays: [...(row?.workDays ?? DEFAULT_SETTINGS.workDays)],
-        periodStartDay: row?.periodStartDay ?? DEFAULT_SETTINGS.periodStartDay,
-      }
-    },
+    getSettings: () => getSettingsIn(),
 
     async saveSettings(patch: Partial<Settings>): Promise<Settings> {
       return db.transaction('rw', db.settings, async () => {
@@ -217,6 +213,35 @@ export function createRepository(db: PontoDb) {
         validateSettings(next)
         await db.settings.put({ id: SETTINGS_ID, ...next })
         return next
+      })
+    },
+
+    /** Quantos intervalos existem, em qualquer data. */
+    countIntervals: () => db.intervals.count(),
+
+    /** Tudo o que está guardado, para o backup. */
+    async exportAll(): Promise<BackupData> {
+      return db.transaction('r', db.intervals, db.daysOff, db.settings, async () => {
+        const [intervals, daysOff, settings] = await Promise.all([
+          db.intervals.orderBy('start').toArray(),
+          db.daysOff.orderBy('date').toArray(),
+          getSettingsIn(),
+        ])
+        return { intervals, daysOff, settings }
+      })
+    },
+
+    /**
+     * Substitui todos os dados pelos do backup, numa única transação: se algo falhar no meio,
+     * os dados anteriores continuam lá. Quem chama já validou com `parseBackup`.
+     */
+    async replaceAll(data: BackupData): Promise<void> {
+      validateSettings(data.settings)
+      await db.transaction('rw', db.intervals, db.daysOff, db.settings, async () => {
+        await Promise.all([db.intervals.clear(), db.daysOff.clear(), db.settings.clear()])
+        await db.intervals.bulkAdd(data.intervals)
+        await db.daysOff.bulkAdd(data.daysOff)
+        await db.settings.put({ id: SETTINGS_ID, ...data.settings, workDays: [...data.settings.workDays] })
       })
     },
   }

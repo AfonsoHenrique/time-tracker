@@ -1,8 +1,9 @@
 import { addDays } from 'date-fns'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BalanceStat, Stat } from '../../components/Stat'
 import { getRepository } from '../../db/repository'
 import { intervalMinutes, intervalsOfDay, summarizeDay, summarizeWeek } from '../../lib/balance'
+import { formatLastBackup, isBackupDue } from '../../lib/backup'
 import { formatDayTitle, formatElapsed, formatShortDay, formatTime } from '../../lib/clock'
 import { formatDevOpsRefs } from '../../lib/devops'
 import { formatDuration } from '../../lib/duration'
@@ -10,6 +11,7 @@ import { describeIrregularity, findIrregularities } from '../../lib/irregular'
 import { dayKey, isWorkDay, parseDayKey } from '../../lib/time'
 import type { Interval } from '../../lib/types'
 import { errorMessage } from '../shared/errors'
+import { readLastBackup } from '../shared/lastBackup'
 import { useNow } from '../shared/useNow'
 import { useRangeData, type RangeData } from '../shared/useRangeData'
 import { IntervalSheet, type IntervalValues } from './IntervalSheet'
@@ -128,6 +130,8 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
         Meta do dia {formatDuration(summary.target)} · da semana {formatDuration(week.target)}
       </p>
 
+      {isToday && <BackupReminder now={now} data={data} />}
+
       {problems.length > 0 && (
         <div className="alert alert-warning" role="status">
           <strong>Dia irregular</strong>
@@ -207,5 +211,34 @@ function DevOpsLine({ interval }: { interval: Interval }) {
       {refs}
       {interval.declared && <span className="interval-declared">{refs && ' · '}✓ Declarado</span>}
     </span>
+  )
+}
+
+/**
+ * Aviso discreto quando o último backup tem mais de 14 dias, ou quando nunca houve backup e já
+ * há dados. `data` muda a cada gravação, e aí a contagem de intervalos é refeita.
+ */
+function BackupReminder({ now, data }: { now: Date; data: RangeData }) {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    void getRepository()
+      .countIntervals()
+      .then((count) => {
+        if (alive) setHasData(count > 0)
+      })
+    return () => {
+      alive = false
+    }
+  }, [data])
+
+  const lastBackupAt = readLastBackup()
+  if (hasData === null || !isBackupDue(lastBackupAt, hasData, now)) return null
+  return (
+    <p className="backup-reminder" role="status">
+      {lastBackupAt === null ? 'Você ainda não fez backup.' : `Último backup ${formatLastBackup(lastBackupAt, now)}.`}{' '}
+      <a href="#/dados">Fazer backup</a>
+    </p>
   )
 }
