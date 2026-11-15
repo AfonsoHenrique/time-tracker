@@ -10,16 +10,19 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:rules": "npx -y firebase-tools@15 emulators:exec --only firestore,auth --project ponto-regras \"vitest run --config vitest.rules.config.ts\"",
     "typecheck": "tsc -b --noEmit",
     "check": "npm run lint && npm run typecheck && npm test"
   },
   "dependencies": {
     "date-fns": "^4.4.0",
     "dexie": "^4.4.7",
+    "firebase": "^12.19.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

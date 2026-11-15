@@ -1,6 +1,6 @@
 # 008. Login sem senha e sincronização entre aparelhos
 
-- **Status**: Rascunho
+- **Status**: Em andamento
 - **Marco**: 7 (fase 2)
 - **Relacionado**: [ADR 0004](../adr/0004-sincronizacao-dexie-firestore.md) (substitui a [ADR 0003](../adr/0003-firebase-na-fase-2.md)), [006-backup-e-persistencia](006-backup-e-persistencia.md), [ARCHITECTURE.md](../ARCHITECTURE.md)
 
@@ -50,14 +50,14 @@ Na fase 1 cada aparelho tem os seus dados, e o backup JSON é a única ponte ent
 - [ ] CA1. Sem login, todas as telas funcionam como antes e nenhuma chamada ao Firebase é feita.
 - [ ] CA2. Entrar com Microsoft e depois com Google (vinculado) leva ao mesmo `uid` e aos mesmos dados.
 - [ ] CA3. Bato a entrada no Mac sem rede; o intervalo aparece na hora. Quando a rede volta, ele aparece no Android em até um minuto com o app aberto, ou ao abrir o app.
-- [ ] CA4. Edito a observação do mesmo intervalo no Mac (10:00) e no Android (10:05), os dois offline. Depois de sincronizar, os dois aparelhos mostram a do Android.
-- [ ] CA5. Apago um intervalo no Android e edito o mesmo no Mac antes, offline. Depois de sincronizar, vale a ação mais recente nos dois aparelhos.
-- [ ] CA6. Entrada batida nos dois aparelhos offline: depois de sincronizar há dois intervalos abertos, o dia fica irregular e Sair fecha o mais recente.
-- [ ] CA7. Primeiro login com 20 intervalos no aparelho e nuvem vazia: os 20 sobem. Num segundo aparelho vazio, os 20 descem.
+- [x] CA4. Edito a observação do mesmo intervalo no Mac (10:00) e no Android (10:05), os dois offline. Depois de sincronizar, os dois aparelhos mostram a do Android.
+- [x] CA5. Apago um intervalo no Android e edito o mesmo no Mac antes, offline. Depois de sincronizar, vale a ação mais recente nos dois aparelhos.
+- [x] CA6. Entrada batida nos dois aparelhos offline: depois de sincronizar há dois intervalos abertos, o dia fica irregular e Sair fecha o mais recente.
+- [x] CA7. Primeiro login com 20 intervalos no aparelho e nuvem vazia: os 20 sobem. Num segundo aparelho vazio, os 20 descem.
 - [ ] CA8. Primeiro login com dados nos dois lados: a tela mostra o resumo; Juntar une pelos ids; Cancelar não muda nada em nenhum lado.
-- [ ] CA9. Com o usuário A logado, uma leitura ou gravação em `users/B/…` é negada (teste no emulador do Firestore).
-- [ ] CA10. Um documento com `end` antes de `start`, ou `project` com mais de 15 caracteres, é negado pelas regras.
-- [ ] CA11. Restaurar um backup com a sincronização ligada deixa a nuvem e o outro aparelho iguais ao backup.
+- [x] CA9. Com o usuário A logado, uma leitura ou gravação em `users/B/…` é negada (teste no emulador do Firestore).
+- [x] CA10. Um documento com `end` antes de `start`, ou `project` com mais de 15 caracteres, é negado pelas regras.
+- [x] CA11. Restaurar um backup com a sincronização ligada deixa a nuvem e o outro aparelho iguais ao backup.
 - [ ] CA12. Dados de homologação nunca aparecem na produção, e o contrário.
 - [ ] CA13. Sair com alterações pendentes mostra o aviso; depois de sair os dados continuam no aparelho.
 - [ ] CA14. O bloco Conta cabe em 390 px nos temas claro e escuro; o login funciona no Chrome do Mac e no app instalado no Android.
@@ -105,8 +105,8 @@ Cada documento é o registro local mais `updatedAt` (do aparelho, decide o confl
 
 ### Banco local: versão 4 do schema
 
-- `daysOff` e `settings` ganham `updatedAt` (o `upgrade` preenche com o instante da migração).
-- Tabela nova `outbox`: `key` (`intervals/{id}`, `daysOff/{data}`, `settings`), `updatedAt`. Toda gravação e todo apagar do repositório escreve na outbox na mesma transação.
+- `daysOff` e `settings` ganham `updatedAt` no banco (`DayOffRow`, `SettingsRow`; o `upgrade` preenche com o instante da migração). Os tipos de `lib/types.ts` não mudam: o repositório tira o campo ao ler, e o backup continua igual.
+- Tabela nova `outbox`: `key` (`intervals/{id}`, `daysOff/{data}`, `settings/settings`), `updatedAt`. Toda gravação e todo apagar do repositório escreve na outbox na mesma transação.
 - Tabela nova `tombstones`: `key`, `deletedAt`. Apagar remove o registro da tabela de sempre (as consultas não mudam) e guarda a marca aqui até ela subir.
 - Tabela nova `syncState` (uma linha): `uid` do aparelho, `lastPulledAt`, `lastSyncAt`, último erro.
 
@@ -115,17 +115,18 @@ Cada documento é o registro local mais `updatedAt` (do aparelho, decide o confl
 - **Enviar**: para cada item da outbox, lê o registro (ou a marca) e grava no Firestore numa transação que só escreve se o `updatedAt` remoto for menor ou igual. Depois tira da outbox. Em lotes de até 500.
 - **Receber**: consulta cada coleção com `syncedAt > lastPulledAt` e aplica no Dexie quando o remoto é mais novo que o local; marca remota apaga o local. Avança `lastPulledAt`.
 - Ordem: enviar, depois receber. Um ciclo por vez (trava em memória e `navigator.locks` entre abas).
-- A regra de conflito é pura em `src/lib/sync.ts` (`resolve(local, remote)`), com teste.
+- A regra de conflito é pura em `src/lib/sync.ts` (`isNewer(chegou, existente)`), com teste.
+- Dois intervalos abertos depois de sincronizar: `getOpenInterval` e Sair usam o mais recente; o dia já aparece como irregular pela sobreposição (R9).
 - Gravações que vêm da sincronização não entram na outbox, para não voltarem em eco.
 - `useRangeData` já recarrega em `visibilitychange`; ganha também um evento `ponto:synced` disparado quando um ciclo traz mudanças.
 
 ### Regras do Firestore
 
-`firestore.rules` no repositório, com `match /users/{uid}/{document=**} { allow read, write: if request.auth.uid == uid }` e validação por coleção. Testes em `firestore.rules.test.ts` com `@firebase/rules-unit-testing` e o emulador, num script `npm run test:rules` (fora do `npm test`, porque precisa de Java). O deploy das regras é manual pelo Afonso (`firebase deploy --only firestore:rules`) até valer a pena automatizar.
+`firebase/firestore.rules` no repositório, com `match /users/{uid}/{document=**} { allow read, write: if request.auth.uid == uid }` e validação por coleção. Testes em `firebase/firestore.rules.test.ts` com `@firebase/rules-unit-testing`, e a sincronização de ponta a ponta em `firebase/sync.emulator.test.ts`, nos emuladores, pelo script `npm run test:rules` (fora do `npm test`, porque precisa de Java 21). O CI roda num job separado. Além da validação, as regras só deixam uma versão mais nova substituir a da nuvem e proíbem apagar documentos de verdade. O deploy das regras é manual pelo Afonso (`firebase deploy --only firestore:rules`) até valer a pena automatizar.
 
 ### Primeiro login
 
-`src/lib/firstSync.ts` (puro) decide entre subir, descer ou perguntar, a partir das contagens dos dois lados e do `uid` guardado em `syncState` (R12 a R15). Juntar = marcar tudo do aparelho na outbox e rodar um ciclo normal; o `updatedAt` resolve os repetidos. Usar só os da nuvem = `replaceAll` com os dados remotos, sem outbox.
+`planFirstSync`, em `src/lib/sync.ts` (puro), decide entre subir, descer ou perguntar, a partir das contagens dos dois lados e do `uid` guardado em `syncState` (R12 a R15). Juntar = marcar tudo do aparelho na outbox e rodar um ciclo normal; o `updatedAt` resolve os repetidos. Usar só os da nuvem = `replaceAll` com os dados remotos, sem outbox.
 
 ### Backup
 
@@ -145,13 +146,13 @@ Cada documento é o registro local mais `updatedAt` (do aparelho, decide o confl
 
 ## Tarefas
 
-- [ ] T1. ADR 0004 e esta spec aprovadas.
-- [ ] T2. Schema v4 (`outbox`, `tombstones`, `syncState`, `updatedAt` em dias sem meta e configurações) + migração e testes.
-- [ ] T3. Repositório grava na outbox e nas marcas; `replaceAll` com sync ligado (R20) + testes.
-- [ ] T4. `lib/sync.ts` (conflito) e `lib/firstSync.ts` (primeiro login) + testes (CA4–CA8).
-- [ ] T5. `src/sync/engine.ts` com Firestore lite, gatilhos e evento `ponto:synced` + testes com o Firestore simulado.
+- [x] T1. ADR 0004 e esta spec aprovadas.
+- [x] T2. Schema v4 (`outbox`, `tombstones`, `syncState`, `updatedAt` em dias sem meta e configurações) + migração e testes.
+- [x] T3. Repositório grava na outbox e nas marcas; `replaceAll` com sync ligado (R20) + testes.
+- [x] T4. `lib/sync.ts`: conflito e plano do primeiro login (`planFirstSync`) + testes (CA4–CA8).
+- [x] T5. `src/sync/engine.ts` com Firestore lite, gatilhos e evento `ponto:synced` + testes com o Firestore simulado e de ponta a ponta nos emuladores.
 - [ ] T6. `src/sync/auth.ts`: login, vínculo e saída; bloco Conta na aba Dados (R3, R4, R10, R16).
 - [ ] T7. Tela do primeiro login com resumo e opções (R14, R15).
-- [ ] T8. `firestore.rules` + testes no emulador (CA9, CA10).
+- [x] T8. `firestore.rules` + testes no emulador (CA9, CA10).
 - [ ] T9. Conferência no Mac e no Android instalado, nos dois ambientes (CA3, CA12, CA14).
 - [ ] T10. Atualizar PRODUCT.md, ARCHITECTURE.md, AGENTS.md e o índice de specs.

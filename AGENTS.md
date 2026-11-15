@@ -21,6 +21,7 @@ npm test             # testes (Vitest)
 npm run lint         # oxlint
 npm run typecheck    # tsc sem emitir arquivos
 npm run check        # lint + typecheck + testes
+npm run test:rules   # regras do Firestore e sync de ponta a ponta nos emuladores (precisa de Java 21)
 npm run build        # tsc + build de produção em dist/
 VITE_APP_ENV=hml npm run build   # build de homologação
 ```
@@ -44,11 +45,13 @@ src/
     devops.ts       # ids de work item/task, projeto e padrões para dados antigos
     settings.ts     # validação das configurações (repositório e backup)
     backup.ts       # arquivo de backup: montar, validar, resumo e aviso de backup
+    sync.ts         # chaves, conflito (última gravação vence) e plano do primeiro login
     test-helpers.ts # at() e iv() para montar instantes e intervalos nos testes
     *.test.ts       # testes ao lado do código
   db/
-    schema.ts       # Dexie (PontoDb): tabelas, índices e migrações (versão 3)
-    repository.ts   # única porta de entrada para os dados (getRepository)
+    schema.ts       # Dexie (PontoDb): tabelas, índices e migrações (versão 4)
+    repository.ts   # única porta de entrada para os dados (getRepository), com fila da sincronização
+  sync/             # engine (ciclo enviar/receber, primeiro login), autoSync (gatilhos), firestoreRemote, memoryRemote
   features/
     shared/         # useRangeData (semana ou período), useNow, useRoute, ExportPanel, errors, lastBackup
     today/          # tela Hoje: TodayScreen, IntervalSheet
@@ -56,6 +59,7 @@ src/
     period/         # tela Período: PeriodScreen
     data/           # aba Dados: DataScreen (backup, restaurar, armazenamento)
   components/       # TabBar, Stat/BalanceStat: visuais, sem regra de negócio
+firebase/           # firestore.rules e testes nos emuladores
 docs/               # produto, arquitetura, ADRs e specs
 .github/workflows/  # ci.yml (PRs) e deploy.yml (Pages)
 ```
@@ -93,4 +97,5 @@ Use `DB_NAME` e `IS_HML` de `src/lib/env.ts`; nunca escreva o nome do banco à m
 - Commitar direto em `main` ou `develop`. Sempre branch + PR para `develop`.
 - Desabilitar, pular ou apagar teste para o CI passar.
 - Mudar a estrutura dos dados salvos sem migração do Dexie (versão nova do schema).
-- Adicionar backend, login ou serviço externo na fase 1 (ver [ADR 0001](docs/adr/0001-dados-locais-indexeddb.md)).
+- Adicionar backend ou serviço externo além do Firebase da fase 2 (ver [ADR 0004](docs/adr/0004-sincronizacao-dexie-firestore.md)).
+- Fazer as telas falarem com o Firestore: a sincronização passa pelo repositório e por `src/sync/`.

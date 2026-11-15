@@ -53,5 +53,7 @@ export default defineConfig({
   ],
   test: {
     environment: 'node',
+    // As regras do Firestore têm testes próprios, no emulador: `npm run test:rules`.
+    exclude: ['**/node_modules/**', 'firebase/**'],
   },
 })
