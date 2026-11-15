@@ -1,6 +1,6 @@
 # 0004. Sincronização: Dexie local com Firestore, login Microsoft e Google
 
-- **Status**: Proposto
+- **Status**: Aceito
 - **Data**: 2026-11-15
 - **Substitui**: [0003](0003-firebase-na-fase-2.md)
 
@@ -12,7 +12,7 @@ A ADR 0003 propôs Firebase com login Google e uma implementação Firestore do 
 - O app precisa continuar funcionando **sem login**, como na fase 1.
 - O repositório tem regras que precisam de transação local (um só intervalo aberto, `replaceAll` tudo ou nada). O cache offline do Firestore não faz transação sem rede.
 
-## Decisão (proposta)
+## Decisão
 
 - **Firebase Auth** com os provedores Microsoft e Google, login por popup, vínculo dos dois na mesma conta.
 - O **Dexie continua sendo o repositório** e a fonte da verdade no aparelho. Um motor de sincronização próprio (`src/sync/`) envia uma fila de mudanças (outbox) e recebe as mudanças remotas por um cursor de `serverTimestamp`.

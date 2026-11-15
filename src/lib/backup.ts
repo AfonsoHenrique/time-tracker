@@ -216,3 +216,27 @@ export function formatBytes(bytes: number): string {
   const text = value < 10 ? value.toFixed(1).replace('.', ',').replace(',0', '') : String(Math.round(value))
   return `${text} ${units[unit]}`
 }
+
+export type RecordResult<T> = { ok: true; value: T } | { ok: false; error: string }
+
+function readRecord<T>(read: () => T): RecordResult<T> {
+  try {
+    return { ok: true, value: read() }
+  } catch (error) {
+    if (error instanceof BackupError) return { ok: false, error: error.message }
+    throw error
+  }
+}
+
+/** Valida um intervalo que veio de fora (sincronização), com as mesmas regras do backup. */
+export const parseIntervalRecord = (raw: unknown): RecordResult<Interval> => readRecord(() => readInterval(raw, 1))
+
+/** Valida um dia sem meta que veio de fora (sincronização). */
+export const parseDayOffRecord = (raw: unknown): RecordResult<DayOff> => readRecord(() => readDayOff(raw, 1))
+
+/** Valida configurações que vieram de fora (sincronização). */
+export const parseSettingsRecord = (raw: unknown): RecordResult<Settings> =>
+  readRecord(() => {
+    if (raw === undefined) throw new BackupError('Configurações ausentes.')
+    return readSettings(raw)
+  })

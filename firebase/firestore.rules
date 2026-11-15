@@ -1,0 +1,93 @@
+rules_version = '2';
+
+// Regras do Firestore do Ponto (spec 008). Cada usuário só lê e grava em users/{seu uid}/…
+// Os documentos espelham as validações do repositório (src/db/repository.ts).
+// Deploy manual: npx firebase-tools deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isInstant(value) {
+      return value is string && value.size() >= 20 && value.size() <= 30;
+    }
+
+    // Envelope comum: o registro (ou null, se apagado), quando mudou, quando foi apagado e
+    // a hora do servidor, que serve de cursor para os outros aparelhos.
+    function isEnvelope(doc) {
+      return doc.keys().hasOnly(['data', 'updatedAt', 'deletedAt', 'syncedAt'])
+        && doc.keys().hasAll(['data', 'updatedAt', 'deletedAt', 'syncedAt'])
+        && isInstant(doc.updatedAt)
+        && doc.syncedAt == request.time
+        && ((doc.deletedAt == null && doc.data is map)
+          || (isInstant(doc.deletedAt) && doc.data == null));
+    }
+
+    function isDevOpsId(value) {
+      return value == null || (value is int && value > 0);
+    }
+
+    function isInterval(data, id) {
+      return data.keys().hasOnly(['id', 'start', 'end', 'note', 'workItemId', 'taskId', 'declared', 'project', 'createdAt', 'updatedAt'])
+        && data.id == id
+        && isInstant(data.start)
+        && (data.end == null || (isInstant(data.end) && data.end >= data.start))
+        && data.note is string && data.note.size() <= 2000
+        && isDevOpsId(data.workItemId)
+        && isDevOpsId(data.taskId)
+        && data.declared is bool
+        && data.project is string && data.project.size() <= 15
+        && isInstant(data.createdAt)
+        && isInstant(data.updatedAt);
+    }
+
+    function isDayOff(data, date) {
+      return data.keys().hasOnly(['date', 'note'])
+        && data.date == date
+        && date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.note is string && data.note.size() <= 2000;
+    }
+
+    function isSettings(data) {
+      return data.keys().hasOnly(['dailyTargetMinutes', 'workDays', 'periodStartDay'])
+        && data.dailyTargetMinutes is int && data.dailyTargetMinutes >= 0 && data.dailyTargetMinutes <= 1440
+        && data.workDays is list && data.workDays.size() <= 7
+        && data.periodStartDay is int && data.periodStartDay >= 1 && data.periodStartDay <= 28;
+    }
+
+    // Última gravação vence também na nuvem: só substitui um documento por outro mais novo.
+    function isNewer() {
+      let incoming = request.resource.data.deletedAt != null ? request.resource.data.deletedAt : request.resource.data.updatedAt;
+      let existing = resource == null ? null : (resource.data.deletedAt != null ? resource.data.deletedAt : resource.data.updatedAt);
+      return existing == null || incoming > existing;
+    }
+
+    function canWrite(uid) {
+      return isOwner(uid) && isEnvelope(request.resource.data) && isNewer();
+    }
+
+    match /users/{uid}/envs/{env} {
+      match /intervals/{id} {
+        allow read: if isOwner(uid) && env in ['prod', 'hml'];
+        allow create, update: if env in ['prod', 'hml'] && canWrite(uid)
+          && (request.resource.data.data == null || isInterval(request.resource.data.data, id));
+      }
+
+      match /daysOff/{date} {
+        allow read: if isOwner(uid) && env in ['prod', 'hml'];
+        allow create, update: if env in ['prod', 'hml'] && canWrite(uid)
+          && (request.resource.data.data == null || isDayOff(request.resource.data.data, date));
+      }
+
+      match /meta/{doc} {
+        allow read: if isOwner(uid) && env in ['prod', 'hml'];
+        allow create, update: if env in ['prod', 'hml'] && doc == 'settings' && canWrite(uid)
+          && (request.resource.data.data == null || isSettings(request.resource.data.data));
+      }
+    }
+
+    // Nada mais é acessível. Apagar documentos de verdade não é permitido: apagar é uma marca.
+  }
+}

@@ -330,3 +330,85 @@ describe('projeto (spec 007)', () => {
     expect(await migrated.listIntervals('2026-11-09', '2026-11-09')).toEqual([{ ...old, project: '' }])
   })
 })
+
+describe('fila da sincronização (spec 008)', () => {
+  let db: PontoDb
+  beforeEach(() => {
+    db = new PontoDb('fila', { indexedDB: new IDBFactory(), IDBKeyRange })
+    repo = createRepository(db)
+  })
+
+  it('toda gravação entra na fila com o updatedAt do registro', async () => {
+    const created = await repo.createInterval({ start: '2026-11-09T08:00', end: '2026-11-09T09:00' })
+    await repo.setDayOff('2026-11-10')
+    await repo.saveSettings({ periodStartDay: 1 })
+    const keys = (await db.outbox.toArray()).map((row) => row.key).sort()
+    expect(keys).toEqual([`intervals/${created.id}`, 'daysOff/2026-11-10', 'settings/settings'].sort())
+    expect((await db.outbox.get(`intervals/${created.id}`))?.updatedAt).toBe(created.updatedAt)
+  })
+
+  it('apagar deixa marca e entra na fila; apagar o que não existe não faz nada', async () => {
+    const created = await repo.createInterval({ start: '2026-11-09T08:00', end: '2026-11-09T09:00' })
+    await repo.deleteInterval(created.id)
+    await repo.removeDayOff('2026-11-10')
+    expect(await db.tombstones.toArray()).toEqual([{ key: `intervals/${created.id}`, deletedAt: expect.any(String) }])
+    const docs = await repo.sync.pending()
+    expect(docs).toEqual([{ key: `intervals/${created.id}`, data: null, updatedAt: expect.any(String), deletedAt: expect.any(String) }])
+  })
+
+  it('marcar de novo um dia sem meta apagado tira a marca', async () => {
+    await repo.setDayOff('2026-11-10')
+    await repo.removeDayOff('2026-11-10')
+    await repo.setDayOff('2026-11-10', 'de novo')
+    expect(await db.tombstones.count()).toBe(0)
+    expect(await repo.listDaysOff('2026-11-10', '2026-11-10')).toEqual([{ date: '2026-11-10', note: 'de novo' }])
+  })
+
+  it('avisa as gravações do aparelho, e só elas', async () => {
+    let calls = 0
+    const stop = repo.onLocalChange(() => calls++)
+    await repo.startInterval(new Date('2026-11-09T08:00'))
+    await repo.stopInterval(new Date('2026-11-09T09:00'))
+    await repo.sync.applyRemote([
+      { key: 'daysOff/2026-11-10', data: { date: '2026-11-10', note: '' }, updatedAt: '2026-11-09T12:00:00.000Z', deletedAt: null },
+    ])
+    expect(calls).toBe(2)
+    stop()
+    await repo.setDayOff('2026-11-11')
+    expect(calls).toBe(2)
+  })
+
+  it('não tira da fila o que mudou de novo enquanto subia', async () => {
+    const created = await repo.createInterval({ start: '2026-11-09T08:00', end: '2026-11-09T09:00' })
+    const [sent] = await repo.sync.pending()
+    await new Promise((resolve) => setTimeout(resolve, 2))
+    await repo.updateInterval(created.id, { note: 'mudou' })
+    await repo.sync.markPushed([sent])
+    expect(await repo.sync.pendingCount()).toBe(1)
+  })
+
+  it('restaurar sem sincronização mantém o updatedAt do backup e marca o que sumiu', async () => {
+    const gone = await repo.createInterval({ start: '2026-11-09T08:00', end: '2026-11-09T09:00' })
+    const kept = await repo.createInterval({ start: '2026-11-09T10:00', end: '2026-11-09T11:00' })
+    await repo.replaceAll({ intervals: [kept], daysOff: [], settings: DEFAULT_SETTINGS })
+    expect(await repo.listIntervals('2026-11-09', '2026-11-09')).toEqual([kept])
+    expect((await db.tombstones.toArray()).map((row) => row.key)).toEqual([`intervals/${gone.id}`])
+  })
+
+  it('abrir um banco da versão 3 dá updatedAt aos dias sem meta e às configurações', async () => {
+    const indexedDB = new IDBFactory()
+    const v3 = new Dexie('migracao-v3', { indexedDB, IDBKeyRange })
+    v3.version(3).stores({ intervals: 'id, start', daysOff: 'date', settings: 'id' })
+    await v3.table('daysOff').add({ date: '2026-11-10', note: 'feriado' })
+    await v3.table('settings').add({ id: 'settings', ...DEFAULT_SETTINGS, periodStartDay: 1 })
+    v3.close()
+
+    const migratedDb = new PontoDb('migracao-v3', { indexedDB, IDBKeyRange })
+    const migrated = createRepository(migratedDb)
+    expect(await migrated.listDaysOff('2026-11-10', '2026-11-10')).toEqual([{ date: '2026-11-10', note: 'feriado' }])
+    expect(await migrated.getSettings()).toEqual({ ...DEFAULT_SETTINGS, periodStartDay: 1 })
+    expect((await migratedDb.daysOff.get('2026-11-10'))?.updatedAt).toEqual(expect.any(String))
+    expect((await migratedDb.settings.get('settings'))?.updatedAt).toEqual(expect.any(String))
+    expect(await migrated.sync.getState()).toMatchObject({ uid: null, lastPulledAt: null })
+  })
+})
