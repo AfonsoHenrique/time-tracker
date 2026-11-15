@@ -63,5 +63,5 @@ Mesmas colunas da aba SEMANA da planilha `HORAS.xlsx`:
 | Fase | Escopo |
 |---|---|
 | 1 | Tudo local, sem login, GitHub Pages |
-| 2 | Sincronização Mac/Android e login (Firebase recomendado, ver ADR 0003) |
+| 2 | Sincronização Mac/Android e login sem senha (Microsoft e Google), ver spec 008 e ADR 0004 |
 | 3 (ideia) | Quebrar blocos em atividades com task/projeto e lançar no Azure DevOps |
