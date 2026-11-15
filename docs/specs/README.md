@@ -24,5 +24,6 @@ Status: Rascunho → Pronta → Em andamento → Concluída.
 | [006-backup-e-persistencia](006-backup-e-persistencia.md) | 6. Backup e persistência | Concluída |
 | [007-projeto-e-work-item-na-exportacao](007-projeto-e-work-item-na-exportacao.md) | 5.2. Projeto no intervalo e work item na exportação | Concluída |
 | [008-login-e-sincronizacao](008-login-e-sincronizacao.md) | 7. Login sem senha e sincronização (fase 2) | Rascunho |
+| [009-previsao-de-saida](009-previsao-de-saida.md) | 3.1. Previsão do horário de saída | Rascunho |
 
 Com a 006, a fase 1 está completa.
