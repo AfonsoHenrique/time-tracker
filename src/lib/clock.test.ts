@@ -62,7 +62,7 @@ describe('parseTimeInput', () => {
 })
 
 describe('readIntervalForm', () => {
-  const base = { day: '2026-11-09', endDay: '2026-11-09', note: '', workItem: '', task: '', declared: false }
+  const base = { day: '2026-11-09', endDay: '2026-11-09', note: '', workItem: '', task: '', declared: false, project: '' }
 
   it('lê início, fim e observação sem arredondar', () => {
     const result = readIntervalForm({ ...base, start: '08:07', end: '11:32', note: '  daily  ' })
@@ -74,6 +74,7 @@ describe('readIntervalForm', () => {
       workItemId: null,
       taskId: null,
       declared: false,
+      project: '',
     })
   })
 
@@ -98,6 +99,17 @@ describe('readIntervalForm', () => {
     expect(readIntervalForm({ ...base, start: '09:00', end: '', task: '12.5' })).toEqual({
       ok: false,
       error: 'A task deve ser um número, ex.: 123568.',
+    })
+  })
+
+  it('spec 007: lê o projeto sem espaços nas pontas e recusa mais de 15 caracteres', () => {
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', project: ' Equipe IA ' })).toMatchObject({
+      ok: true,
+      project: 'Equipe IA',
+    })
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', project: 'a'.repeat(16) })).toEqual({
+      ok: false,
+      error: 'O projeto deve ter no máximo 15 caracteres.',
     })
   })
 
@@ -135,6 +147,7 @@ describe('intervalToForm', () => {
       workItem: '',
       task: '',
       declared: false,
+      project: '',
     })
   })
 
@@ -148,6 +161,7 @@ describe('intervalToForm', () => {
       workItem: '',
       task: '',
       declared: false,
+      project: '',
     })
   })
 

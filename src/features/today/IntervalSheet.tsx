@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { formatShortDay, intervalToForm, readIntervalForm, type IntervalForm } from '../../lib/clock'
-import type { Interval } from '../../lib/types'
+import { PROJECT_MAX_LENGTH, type Interval } from '../../lib/types'
 import { errorMessage } from '../shared/errors'
 
 export interface IntervalValues {
@@ -10,6 +10,7 @@ export interface IntervalValues {
   workItemId: number | null
   taskId: number | null
   declared: boolean
+  project: string
 }
 
 interface Props {
@@ -98,6 +99,22 @@ export function IntervalSheet({ day, interval, onSave, onDelete, onClose }: Prop
 
         <fieldset className="sheet-devops">
           <legend>Azure DevOps</legend>
+          <label className="sheet-project">
+            <span>
+              Projeto{' '}
+              <span className="muted">
+                ({form.project.length}/{PROJECT_MAX_LENGTH})
+              </span>
+            </span>
+            <input
+              type="text"
+              maxLength={PROJECT_MAX_LENGTH}
+              autoComplete="off"
+              value={form.project}
+              placeholder="Opcional"
+              onChange={(e) => update({ project: e.target.value })}
+            />
+          </label>
           <div className="sheet-times">
             <label>
               Work item

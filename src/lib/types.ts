@@ -14,16 +14,22 @@ export interface Interval {
   taskId: number | null
   /** As horas deste intervalo já foram lançadas no Azure DevOps. */
   declared: boolean
+  /** Projeto, texto livre de até `PROJECT_MAX_LENGTH` caracteres. Vazio = sem projeto. Vai para a coluna Projeto da planilha. */
+  project: string
   createdAt: string
   updatedAt: string
 }
 
 /** Valores dos campos do Azure DevOps para um intervalo sem nenhum deles preenchido. */
-export const EMPTY_DEVOPS_FIELDS: Readonly<Pick<Interval, 'workItemId' | 'taskId' | 'declared'>> = {
+export const EMPTY_DEVOPS_FIELDS: Readonly<Pick<Interval, 'workItemId' | 'taskId' | 'declared' | 'project'>> = {
   workItemId: null,
   taskId: null,
   declared: false,
+  project: '',
 }
+
+/** Tamanho máximo do projeto de um intervalo. */
+export const PROJECT_MAX_LENGTH = 15
 
 /** Dia sem meta (feriado, folga): tira a meta diária da semana. `date` é `AAAA-MM-DD` no fuso local. */
 export interface DayOff {

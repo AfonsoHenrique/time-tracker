@@ -40,5 +40,20 @@ export class PontoDb extends Dexie {
             ref.value = withDevOpsDefaults(row)
           }),
       )
+    // Versão 3: projeto no intervalo (spec 007). Os intervalos que já existem ficam sem projeto.
+    this.version(3)
+      .stores({
+        intervals: 'id, start',
+        daysOff: 'date',
+        settings: 'id',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Interval, string>('intervals')
+          .toCollection()
+          .modify((row, ref) => {
+            ref.value = withDevOpsDefaults(row)
+          }),
+      )
   }
 }

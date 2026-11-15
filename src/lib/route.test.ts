@@ -19,6 +19,12 @@ describe('parseRoute', () => {
     expect(parseRoute('#/outra/2026-11-09')).toEqual(HOME)
   })
 
+  it('a tela Dados não tem dia', () => {
+    expect(parseRoute('#/dados')).toEqual({ screen: 'data', day: null })
+    expect(parseRoute('#/dados/2026-11-09')).toEqual({ screen: 'data', day: null })
+    expect(routeHash({ screen: 'data', day: null })).toBe('#/dados')
+  })
+
   it('data inválida vira nula (CA6)', () => {
     expect(parseRoute('#/semana/2026-13-40')).toEqual({ screen: 'week', day: null })
     expect(parseRoute('#/semana/ontem')).toEqual({ screen: 'week', day: null })
@@ -29,7 +35,7 @@ describe('routeHash', () => {
   it('é o inverso de parseRoute', () => {
     expect(routeHash({ screen: 'today', day: null })).toBe('#/hoje')
     expect(routeHash({ screen: 'week', day: '2026-11-02' })).toBe('#/semana/2026-11-02')
-    for (const hash of ['#/hoje', '#/hoje/2026-11-09', '#/semana', '#/semana/2026-11-02', '#/periodo']) {
+    for (const hash of ['#/hoje', '#/hoje/2026-11-09', '#/semana', '#/semana/2026-11-02', '#/periodo', '#/dados']) {
       expect(routeHash(parseRoute(hash))).toBe(hash)
     }
   })

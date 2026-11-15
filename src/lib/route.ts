@@ -1,6 +1,6 @@
 import { isDayKey } from './time'
 
-export type Screen = 'today' | 'week' | 'period'
+export type Screen = 'today' | 'week' | 'period' | 'data'
 
 /** Tela e dia mostrados. `day` nulo segue hoje (ou a semana atual), inclusive na virada do dia. */
 export interface Route {
@@ -8,19 +8,19 @@ export interface Route {
   day: string | null
 }
 
-const SLUGS: Record<Screen, string> = { today: 'hoje', week: 'semana', period: 'periodo' }
+const SLUGS: Record<Screen, string> = { today: 'hoje', week: 'semana', period: 'periodo', data: 'dados' }
 
 export const HOME: Route = { screen: 'today', day: null }
 
 /**
- * Lê o hash da URL (`#/hoje/2026-11-09`, `#/semana/2026-11-02`, `#/periodo/2026-11-10`). Tela desconhecida volta para Hoje;
- * data inválida vira `null`.
+ * Lê o hash da URL (`#/hoje/2026-11-09`, `#/semana/2026-11-02`, `#/periodo/2026-11-10`, `#/dados`). Tela desconhecida
+ * volta para Hoje; data inválida vira `null`. A tela Dados não usa dia.
  */
 export function parseRoute(hash: string): Route {
   const [slug = '', day = ''] = hash.replace(/^#?\/?/, '').split('/')
   const screen = (Object.keys(SLUGS) as Screen[]).find((key) => SLUGS[key] === slug)
   if (!screen) return HOME
-  return { screen, day: isDayKey(day) ? day : null }
+  return { screen, day: screen !== 'data' && isDayKey(day) ? day : null }
 }
 
 export function routeHash(route: Route): string {

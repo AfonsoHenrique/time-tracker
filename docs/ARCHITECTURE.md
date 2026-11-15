@@ -38,7 +38,7 @@ Como as telas leem os dados:
 
 Navegação:
 
-- A tela e o dia ficam no hash da URL: `#/hoje`, `#/hoje/2026-11-10`, `#/semana`, `#/semana/2026-11-02`, `#/periodo`, `#/periodo/2026-11-10`. Sem data, a tela segue hoje ou a semana atual. `src/lib/route.ts` lê e escreve o hash, e `useRoute` escuta `hashchange`. Não há biblioteca de roteamento.
+- A tela e o dia ficam no hash da URL: `#/hoje`, `#/hoje/2026-11-10`, `#/semana`, `#/semana/2026-11-02`, `#/periodo`, `#/periodo/2026-11-10` e `#/dados` (sem data). Sem data, a tela segue hoje ou a semana atual. `src/lib/route.ts` lê e escreve o hash, e `useRoute` escuta `hashchange`. Não há biblioteca de roteamento.
 - Abrir uma semana a partir do Período também cria entrada no histórico.
 - Hash, e não caminho, porque o GitHub Pages não reescreve caminhos para o `index.html`, e o service worker já serve a página do app.
 - Abrir um dia a partir da Semana cria uma entrada no histórico, então o botão voltar do Android retorna à mesma semana. As setas e os botões "Voltar para hoje" e "Esta semana" substituem a entrada atual, para o voltar não passar dia por dia.
@@ -54,6 +54,7 @@ interface Interval {
   workItemId: number | null  // work item do Azure DevOps (ex.: 123567)
   taskId: number | null      // task filha onde as horas são declaradas (ex.: 123568)
   declared: boolean          // horas já lançadas no Azure DevOps
+  project: string            // projeto, até 15 caracteres ('' = sem projeto)
   createdAt: string
   updatedAt: string
 }
@@ -78,14 +79,16 @@ Versões do schema (`src/db/schema.ts`):
 
 - **1**: tabelas `intervals`, `daysOff` e `settings`.
 - **2** (spec 005): campos do Azure DevOps no intervalo. Mesmos índices; o `upgrade` aplica `withDevOpsDefaults` de `src/lib/devops.ts`, que também serve para importar backups antigos.
+- **3** (spec 007): projeto no intervalo. Mesmos índices e o mesmo `upgrade`.
 
 Regras de gravação (`src/db/repository.ts`):
 
 - Só pode existir um intervalo em andamento. Abrir outro, ou reabrir um fechado, falha com `RepositoryError` de código `open-interval-exists`.
 - O fim não pode ser antes do início (`invalid-interval`).
-- Work item e task são inteiros positivos ou `null` (`invalid-interval`). Num patch, `undefined` mantém o valor e `null` limpa.
+- Work item e task são inteiros positivos ou `null`, e o projeto tem no máximo 15 caracteres (`invalid-interval`). Num patch, `undefined` mantém o valor e `null` limpa.
 - Intervalos fechados podem se sobrepor: o destaque de dia irregular avisa, e o usuário corrige.
 - O intervalo aberto é achado por filtro, porque o IndexedDB não indexa `null`.
+- `exportAll()` lê as três tabelas para o backup. `replaceAll(data)` limpa e regrava as três numa única transação: se algo falhar no meio, os dados anteriores continuam lá.
 
 ## Ambientes
 
@@ -102,8 +105,12 @@ Os dois ambientes ficam na **mesma origem** (`afonsohenrique.github.io`):
 
 ## Persistência
 
-- `navigator.storage.persist()` ao iniciar, para o navegador não despejar os dados.
-- Backup manual em JSON (exportar/importar) como rede de segurança até a fase 2.
+- `navigator.storage.persist()` ao iniciar, para o navegador não despejar os dados. A aba Dados mostra o resultado (`persisted()`), o espaço usado (`estimate()`) e pede de novo se precisar.
+- Backup manual em JSON como rede de segurança até a fase 2 (spec 006):
+  - `src/lib/backup.ts` monta o arquivo (`{ app: 'ponto', version: 1, exportedAt, env, intervals, daysOff, settings }`) e valida o que vai ser restaurado (`parseBackup`), sem gravar nada. Intervalos sem os campos do Azure DevOps ganham os padrões de `withDevOpsDefaults`.
+  - A versão do formato do backup é independente da versão do schema do Dexie.
+  - A data do último backup baixado fica no `localStorage` (`ponto:lastBackupAt` ou `ponto-hml:lastBackupAt`), por `src/features/shared/lastBackup.ts`. É só uma informação do aparelho, fora do banco.
+  - Restaurar sempre substitui tudo; não há mesclagem.
 
 ## Exportação
 

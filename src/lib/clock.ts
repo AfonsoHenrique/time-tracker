@@ -1,7 +1,7 @@
 import { differenceInSeconds, format, getISODay, parseISO } from 'date-fns'
-import { devOpsIdToText, parseDevOpsId } from './devops'
+import { devOpsIdToText, normalizeProject, parseDevOpsId } from './devops'
 import { dayKey, parseDayKey } from './time'
-import type { DayRange, Interval } from './types'
+import { PROJECT_MAX_LENGTH, type DayRange, type Interval } from './types'
 
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
 const MONTHS = [
@@ -95,6 +95,7 @@ export interface IntervalForm {
   /** Id da task filha, como digitado. Vazio = sem task. */
   task: string
   declared: boolean
+  project: string
 }
 
 export type IntervalFormResult =
@@ -106,6 +107,7 @@ export type IntervalFormResult =
       workItemId: number | null
       taskId: number | null
       declared: boolean
+      project: string
     }
   | { ok: false; error: string }
 
@@ -123,6 +125,8 @@ export function readIntervalForm(form: IntervalForm): IntervalFormResult {
   if (!workItem.ok) return { ok: false, error: 'O work item deve ser um número, ex.: 123567.' }
   const task = parseDevOpsId(form.task)
   if (!task.ok) return { ok: false, error: 'A task deve ser um número, ex.: 123568.' }
+  const project = normalizeProject(form.project)
+  if (!project.ok) return { ok: false, error: `O projeto deve ter no máximo ${PROJECT_MAX_LENGTH} caracteres.` }
   return {
     ok: true,
     start,
@@ -131,16 +135,17 @@ export function readIntervalForm(form: IntervalForm): IntervalFormResult {
     workItemId: workItem.value,
     taskId: task.value,
     declared: form.declared,
+    project: project.value,
   }
 }
 
 /** Formulário preenchido com um intervalo existente, ou vazio para um novo no dia. */
 export function intervalToForm(
   day: string,
-  interval?: Pick<Interval, 'start' | 'end' | 'note' | 'workItemId' | 'taskId' | 'declared'>,
+  interval?: Pick<Interval, 'start' | 'end' | 'note' | 'workItemId' | 'taskId' | 'declared' | 'project'>,
 ): IntervalForm {
   if (!interval) {
-    return { day, endDay: day, start: '', end: '', note: '', workItem: '', task: '', declared: false }
+    return { day, endDay: day, start: '', end: '', note: '', workItem: '', task: '', declared: false, project: '' }
   }
   return {
     day: dayKey(interval.start),
@@ -151,5 +156,6 @@ export function intervalToForm(
     workItem: devOpsIdToText(interval.workItemId),
     task: devOpsIdToText(interval.taskId),
     declared: interval.declared,
+    project: interval.project,
   }
 }

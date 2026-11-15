@@ -6,8 +6,8 @@
   z-index: 10;
   display: flex;
   justify-content: center;
-  gap: 8px;
-  padding: 6px 16px max(6px, env(safe-area-inset-bottom));
+  gap: 6px;
+  padding: 6px 12px max(6px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
   background: var(--bg);
 }

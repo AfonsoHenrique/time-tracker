@@ -1,4 +1,5 @@
 import { TabBar } from './components/TabBar'
+import { DataScreen } from './features/data/DataScreen'
 import { useRoute } from './features/shared/useRoute'
 import { PeriodScreen } from './features/period/PeriodScreen'
 import { TodayScreen } from './features/today/TodayScreen'
@@ -31,6 +32,7 @@ function App() {
           onOpenWeek={(weekStart) => navigate({ screen: 'week', day: weekStart })}
         />
       )}
+      {route.screen === 'data' && <DataScreen />}
       <TabBar
         current={route.screen}
         onSelect={(screen) => {
