@@ -5,7 +5,7 @@ import {
   formatShortDay,
   formatTime,
   formatWeekdayShort,
-  formatWeekTitle,
+  formatRangeTitle,
   intervalToForm,
   parseTimeInput,
   readIntervalForm,
@@ -124,26 +124,34 @@ describe('intervalToForm', () => {
   })
 })
 
-describe('formatWeekTitle e formatWeekdayShort', () => {
+describe('formatRangeTitle e formatWeekdayShort', () => {
   const now = new Date(at('2026-11-09 10:00'))
 
   it('semana dentro de um mês', () => {
-    expect(formatWeekTitle({ start: '2026-11-02', end: '2026-11-08' }, now)).toBe('2 a 8 de novembro')
+    expect(formatRangeTitle({ start: '2026-11-02', end: '2026-11-08' }, now)).toBe('2 a 8 de novembro')
   })
 
   it('semana que vira o mês', () => {
-    expect(formatWeekTitle({ start: '2026-11-30', end: '2026-12-06' }, now)).toBe('30 de novembro a 6 de dezembro')
+    expect(formatRangeTitle({ start: '2026-11-30', end: '2026-12-06' }, now)).toBe('30 de novembro a 6 de dezembro')
   })
 
   it('semana que vira o ano ou de outro ano', () => {
-    expect(formatWeekTitle({ start: '2026-12-28', end: '2027-01-03' }, now)).toBe(
+    expect(formatRangeTitle({ start: '2026-12-28', end: '2027-01-03' }, now)).toBe(
       '28 de dezembro de 2026 a 3 de janeiro de 2027',
     )
-    expect(formatWeekTitle({ start: '2025-11-03', end: '2025-11-09' }, now)).toBe('3 a 9 de novembro de 2025')
+    expect(formatRangeTitle({ start: '2025-11-03', end: '2025-11-09' }, now)).toBe('3 a 9 de novembro de 2025')
   })
 
   it('dia curto com dia da semana', () => {
     expect(formatWeekdayShort('2026-11-09')).toBe('Seg 09/11')
     expect(formatWeekdayShort('2026-11-15')).toBe('Dom 15/11')
+  })
+})
+
+describe('formatRangeTitle com períodos', () => {
+  it('período 26–25 (CA1)', () => {
+    const now = new Date(at('2026-11-08 10:00'))
+    expect(formatRangeTitle({ start: '2026-10-26', end: '2026-11-25' }, now)).toBe('26 de outubro a 25 de novembro')
+    expect(formatRangeTitle({ start: '2026-11-26', end: '2026-12-25' }, now)).toBe('26 de novembro a 25 de dezembro')
   })
 })

@@ -4,6 +4,7 @@ import './TabBar.css'
 const TABS: { screen: Screen; label: string }[] = [
   { screen: 'today', label: 'Hoje' },
   { screen: 'week', label: 'Semana' },
+  { screen: 'period', label: 'Período' },
 ]
 
 interface Props {

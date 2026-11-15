@@ -19,6 +19,6 @@ Status: Rascunho → Pronta → Em andamento → Concluída.
 | [001-dados-e-regras](001-dados-e-regras.md) | 2. Dados e regras de cálculo | Concluída |
 | [002-tela-hoje](002-tela-hoje.md) | 3. Tela Hoje | Concluída |
 | [003-semana-e-navegacao](003-semana-e-navegacao.md) | 4. Semana e navegação | Concluída |
-| [004-periodo-e-exportacao](004-periodo-e-exportacao.md) | 5. Período e exportação | Rascunho |
+| [004-periodo-e-exportacao](004-periodo-e-exportacao.md) | 5. Período e exportação | Concluída |
 
 Próximas: 005 backup e persistência.

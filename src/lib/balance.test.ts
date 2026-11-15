@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { intervalMinutes, summarizeDay, summarizeWeek, targetMinutes, workedMinutes } from './balance'
+import { intervalMinutes, summarizeDay, summarizeRange, summarizeWeek, targetMinutes, workedMinutes } from './balance'
 import { DEFAULT_SETTINGS } from './types'
-import { iv } from './test-helpers'
+import { at, iv } from './test-helpers'
 
 const settings = { ...DEFAULT_SETTINGS, workDays: [...DEFAULT_SETTINGS.workDays] }
 const noDaysOff = new Set<string>()
@@ -104,5 +104,22 @@ describe('semana', () => {
     const week = summarizeWeek('2026-11-09', intervals, noDaysOff, settings, now)
     expect(week.worked).toBe(0)
     expect(week.remaining).toBe(40 * 60)
+  })
+})
+
+describe('summarizeRange', () => {
+  const now = new Date(at('2026-11-30 12:00'))
+  const period = { start: '2026-10-26', end: '2026-11-25' }
+
+  it('meta do período: 23 dias úteis menos um dia sem meta (CA2)', () => {
+    const summary = summarizeRange(period, [], new Set(['2026-11-02']), settings, now)
+    expect(summary.days).toHaveLength(31)
+    expect(summary.target).toBe(22 * 480)
+  })
+
+  it('soma só os dias dentro da faixa (CA3)', () => {
+    const intervals = [iv('2026-10-25 09:00', '2026-10-25 10:00'), iv('2026-10-26 08:00', '2026-10-26 12:00')]
+    const firstWeekInPeriod = { start: '2026-10-26', end: '2026-11-01' }
+    expect(summarizeRange(firstWeekInPeriod, intervals, new Set(), settings, now).worked).toBe(240)
   })
 })

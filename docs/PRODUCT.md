@@ -29,8 +29,9 @@ Uso pessoal de um profissional PJ, sem controle formal da empresa. O app serve p
 
 - **Hoje**: botão Entrar/Sair, cronômetro enquanto estiver dentro, trabalhado hoje, falta no dia, falta na semana, lista de intervalos, setas ‹ › para trocar de dia, "dia sem meta".
 - **Semana**: uma linha por dia com trabalhado, meta e alerta de irregularidade; totais; setas ‹ › para trocar de semana.
-- **Período 26–25**: totais e semanas; ponto de partida da exportação.
-- **Dados**: exportar CSV, backup e restauração em JSON.
+- **Período 26–25**: totais e semanas, com exportação.
+- **Semana** também exporta os seus dias, porque a planilha é preenchida por semana.
+- **Dados**: backup e restauração em JSON.
 
 ## Dias irregulares
 
@@ -52,7 +53,9 @@ Mesmas colunas da aba SEMANA da planilha `HORAS.xlsx`:
 - Uma linha por intervalo, mais recente primeiro.
 - SEMANA = `seg`…`dom`; DATA = `dd/mm/aaaa`; INICIO/FIM = `HH:MM`; Soma = `H:MM`.
 - Descricao = observação; TASK, Projeto e Detalhe em branco.
-- Saídas: botão "Copiar para o Excel" (TSV na área de transferência) e download `.csv` (`;`, UTF-8 com BOM).
+- Saídas: botão "Copiar para o Excel" (TSV na área de transferência, **sem cabeçalho**, para colar embaixo das linhas que já existem) e download `.csv` (**com cabeçalho**, `;`, UTF-8 com BOM).
+- Intervalo em andamento não entra; a tela avisa quantos ficaram de fora.
+- Intervalo que passa da meia-noite sai numa linha só, no dia do início.
 
 ## Fases
 

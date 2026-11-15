@@ -1,13 +1,14 @@
 import { addWeeks } from 'date-fns'
 import { BalanceStat, Stat } from '../../components/Stat'
-import { intervalsOfDay, summarizeWeek, type DaySummary } from '../../lib/balance'
-import { formatWeekdayShort, formatWeekTitle } from '../../lib/clock'
+import { summarizeWeek, type DaySummary } from '../../lib/balance'
+import { formatWeekdayShort, formatRangeTitle } from '../../lib/clock'
 import { formatDuration } from '../../lib/duration'
-import { findIrregularities } from '../../lib/irregular'
+import { isIrregularDay } from '../../lib/irregular'
 import { dayKey, parseDayKey, weekRange } from '../../lib/time'
 import type { Interval } from '../../lib/types'
 import { useNow } from '../shared/useNow'
-import { useWeekData, type WeekData } from '../shared/useWeekData'
+import { ExportPanel } from '../shared/ExportPanel'
+import { useRangeData, type RangeData } from '../shared/useRangeData'
 import './week.css'
 
 interface Props {
@@ -22,7 +23,7 @@ export function WeekScreen({ day: selected, onChangeWeek, onOpenDay }: Props) {
   const today = dayKey(now)
   const range = weekRange(selected ?? today)
   const isCurrent = range.start === weekRange(today).start
-  const { data } = useWeekData(range.start)
+  const { data } = useRangeData('week', range.start)
 
   const shift = (amount: number) => {
     const start = dayKey(addWeeks(parseDayKey(range.start), amount))
@@ -35,7 +36,7 @@ export function WeekScreen({ day: selected, onChangeWeek, onOpenDay }: Props) {
         <button type="button" className="icon-button" aria-label="Semana anterior" onClick={() => shift(-1)}>
           ‹
         </button>
-        <h1 className="day-title">{formatWeekTitle(range, now)}</h1>
+        <h1 className="day-title">{formatRangeTitle(range, now)}</h1>
         <button type="button" className="icon-button" aria-label="Próxima semana" onClick={() => shift(1)}>
           ›
         </button>
@@ -63,14 +64,14 @@ export function WeekScreen({ day: selected, onChangeWeek, onOpenDay }: Props) {
 
 interface WeekBodyProps {
   weekStart: string
-  data: WeekData
+  data: RangeData
   now: Date
   today: string
   onOpenDay: (day: string | null) => void
 }
 
 function WeekBody({ weekStart, data, now, today, onOpenDay }: WeekBodyProps) {
-  const week = summarizeWeek(weekStart, data.weekIntervals, data.daysOff, data.settings, now)
+  const week = summarizeWeek(weekStart, data.intervals, data.daysOff, data.settings, now)
   return (
     <>
       <ul className="week-days" aria-label="Dias da semana">
@@ -78,7 +79,7 @@ function WeekBody({ weekStart, data, now, today, onOpenDay }: WeekBodyProps) {
           <li key={summary.date}>
             <DayRow
               summary={summary}
-              intervals={data.weekIntervals}
+              intervals={data.intervals}
               now={now}
               isToday={summary.date === today}
               onOpen={() => onOpenDay(summary.date === today ? null : summary.date)}
@@ -92,6 +93,8 @@ function WeekBody({ weekStart, data, now, today, onOpenDay }: WeekBodyProps) {
         <Stat label="Meta" minutes={week.target} />
         <BalanceStat label="na semana" remaining={week.remaining} extra={week.extra} />
       </section>
+
+      <ExportPanel range={data.range} intervals={data.intervals} />
     </>
   )
 }
@@ -105,13 +108,7 @@ interface DayRowProps {
 }
 
 function DayRow({ summary, intervals, now, isToday, onOpen }: DayRowProps) {
-  const irregular =
-    findIrregularities({
-      date: summary.date,
-      intervals: intervalsOfDay(intervals, summary.date),
-      target: summary.target,
-      now,
-    }).length > 0
+  const irregular = isIrregularDay(summary, intervals, now)
 
   const target = summary.isDayOff ? 'sem meta' : summary.target > 0 ? `meta ${formatDuration(summary.target)}` : ''
 

@@ -56,7 +56,7 @@ export function summarizeDay(
   }
 }
 
-export interface WeekSummary {
+export interface RangeSummary {
   range: DayRange
   days: DaySummary[]
   worked: number
@@ -64,6 +64,29 @@ export interface WeekSummary {
   remaining: number
   extra: number
 }
+
+/** Soma os dias de uma faixa (semana, período ou parte deles). Falta e excedente se compensam dentro da faixa. */
+export function summarizeRange(
+  range: DayRange,
+  intervals: readonly Interval[],
+  daysOff: ReadonlySet<string>,
+  settings: Settings,
+  now: Date,
+): RangeSummary {
+  const days = daysInRange(range).map((day) => summarizeDay(day, intervals, daysOff, settings, now))
+  const worked = days.reduce((sum, day) => sum + day.worked, 0)
+  const target = days.reduce((sum, day) => sum + day.target, 0)
+  return {
+    range,
+    days,
+    worked,
+    target,
+    remaining: Math.max(0, target - worked),
+    extra: Math.max(0, worked - target),
+  }
+}
+
+export type WeekSummary = RangeSummary
 
 /**
  * Resumo da semana (segunda a domingo) que contém o dia. A semana começa do zero: nada vem da anterior.
@@ -76,16 +99,5 @@ export function summarizeWeek(
   settings: Settings,
   now: Date,
 ): WeekSummary {
-  const range = weekRange(key)
-  const days = daysInRange(range).map((day) => summarizeDay(day, intervals, daysOff, settings, now))
-  const worked = days.reduce((sum, day) => sum + day.worked, 0)
-  const target = days.reduce((sum, day) => sum + day.target, 0)
-  return {
-    range,
-    days,
-    worked,
-    target,
-    remaining: Math.max(0, target - worked),
-    extra: Math.max(0, worked - target),
-  }
+  return summarizeRange(weekRange(key), intervals, daysOff, settings, now)
 }

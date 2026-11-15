@@ -5,6 +5,7 @@ describe('parseRoute', () => {
   it('lê tela e dia', () => {
     expect(parseRoute('#/hoje/2026-11-09')).toEqual({ screen: 'today', day: '2026-11-09' })
     expect(parseRoute('#/semana/2026-11-04')).toEqual({ screen: 'week', day: '2026-11-04' })
+    expect(parseRoute('#/periodo/2026-11-10')).toEqual({ screen: 'period', day: '2026-11-10' })
   })
 
   it('sem dia segue hoje ou a semana atual', () => {
@@ -28,7 +29,7 @@ describe('routeHash', () => {
   it('é o inverso de parseRoute', () => {
     expect(routeHash({ screen: 'today', day: null })).toBe('#/hoje')
     expect(routeHash({ screen: 'week', day: '2026-11-02' })).toBe('#/semana/2026-11-02')
-    for (const hash of ['#/hoje', '#/hoje/2026-11-09', '#/semana', '#/semana/2026-11-02']) {
+    for (const hash of ['#/hoje', '#/hoje/2026-11-09', '#/semana', '#/semana/2026-11-02', '#/periodo']) {
       expect(routeHash(parseRoute(hash))).toBe(hash)
     }
   })
