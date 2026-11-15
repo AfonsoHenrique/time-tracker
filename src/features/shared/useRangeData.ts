@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getRepository } from '../../db/repository'
+import { SYNCED_EVENT } from '../../sync/autoSync'
 import { periodRange, weekRange } from '../../lib/time'
 import type { DayRange, Interval, Settings } from '../../lib/types'
 
@@ -59,8 +60,14 @@ export function useRangeData(kind: RangeKind, day: string) {
     const onVisible = () => {
       if (document.visibilityState === 'visible') setVersion((v) => v + 1)
     }
+    // A sincronização avisa quando trouxe mudanças de outro aparelho (spec 008).
+    const onSynced = () => setVersion((v) => v + 1)
     document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
+    window.addEventListener(SYNCED_EVENT, onSynced)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener(SYNCED_EVENT, onSynced)
+    }
   }, [])
 
   const run = useCallback(async (action: () => Promise<unknown>) => {

@@ -23,7 +23,7 @@ Status: Rascunho → Pronta → Em andamento → Concluída.
 | [005-azure-devops-no-intervalo](005-azure-devops-no-intervalo.md) | 5.1. Campos do Azure DevOps no intervalo | Concluída |
 | [006-backup-e-persistencia](006-backup-e-persistencia.md) | 6. Backup e persistência | Concluída |
 | [007-projeto-e-work-item-na-exportacao](007-projeto-e-work-item-na-exportacao.md) | 5.2. Projeto no intervalo e work item na exportação | Concluída |
-| [008-login-e-sincronizacao](008-login-e-sincronizacao.md) | 7. Login sem senha e sincronização (fase 2) | Rascunho |
+| [008-login-e-sincronizacao](008-login-e-sincronizacao.md) | 7. Login sem senha e sincronização (fase 2) | Em andamento |
 | [009-previsao-de-saida](009-previsao-de-saida.md) | 3.1. Previsão do horário de saída | Concluída |
 | [010-modo-demo-na-homologacao](010-modo-demo-na-homologacao.md) | 6.1. Modo demo na homologação | Rascunho |
 
