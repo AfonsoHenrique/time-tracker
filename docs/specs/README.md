@@ -20,5 +20,6 @@ Status: Rascunho → Pronta → Em andamento → Concluída.
 | [002-tela-hoje](002-tela-hoje.md) | 3. Tela Hoje | Concluída |
 | [003-semana-e-navegacao](003-semana-e-navegacao.md) | 4. Semana e navegação | Concluída |
 | [004-periodo-e-exportacao](004-periodo-e-exportacao.md) | 5. Período e exportação | Concluída |
+| [005-backup-e-persistencia](005-backup-e-persistencia.md) | 6. Backup e persistência | Rascunho |
 
-Próximas: 005 backup e persistência.
+Com a 005, a fase 1 fica completa.
