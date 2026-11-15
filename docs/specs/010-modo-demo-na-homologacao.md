@@ -1,6 +1,6 @@
 # 010. Modo demo na homologação
 
-- **Status**: Rascunho
+- **Status**: Concluída
 - **Marco**: 6.1
 - **Relacionado**: [ADR 0002](../adr/0002-github-pages-com-homologacao.md), [006-backup-e-persistencia](006-backup-e-persistencia.md), [008-login-e-sincronizacao](008-login-e-sincronizacao.md), [009-previsao-de-saida](009-previsao-de-saida.md)
 
@@ -33,14 +33,14 @@ Para revisar a interface na homologação, hoje é preciso bater pontos à mão 
 
 ## Critérios de aceite
 
-- [ ] CA1. Dado o build de produção, quando procuro no `dist/` pelo texto "Ligar modo demo" e pelo nome `ponto-hml-demo`, então não encontro nada.
-- [ ] CA2. Dado a homologação com 2 intervalos reais, quando ligo o demo, recrio os dados e saio do demo, então os 2 intervalos continuam lá, iguais.
-- [ ] CA3. Dado "agora" = quarta 2026-11-18 15:00, quando gero os dados, então há intervalos de segunda 2026-11-09 até quarta 2026-11-18, nenhum começa ou termina depois das 15:00 de quarta, e só o último está aberto, começando 14:30.
-- [ ] CA4. Dados gerados com o mesmo "agora" duas vezes são iguais (com os mesmos ids).
-- [ ] CA5. Nos dados gerados, a semana anterior tem um dia sem meta e exatamente um dia irregular (`isIrregularDay`), por sobreposição. Nenhum outro dia é irregular.
-- [ ] CA6. Nos dados gerados há intervalos com e sem task, declarados e não declarados, com e sem projeto, e todos passam nas validações do repositório (projeto até 15 caracteres, ids inteiros positivos, fim depois do início).
-- [ ] CA7. Dado "agora" = segunda 07:00, então a semana atual não tem intervalos e a anterior está completa. Dado "agora" = domingo 20:00, então a semana atual tem todos os dias úteis completos e nenhum intervalo aberto.
-- [ ] CA8. Com o demo ligado, o selo mostra "Homologação · Demo", e as telas Hoje, Semana, Período e Dados cabem em 390 px, nos temas claro e escuro.
+- [x] CA1. Dado o build de produção, quando procuro no `dist/` pelo texto "Ligar modo demo" e pelo nome `ponto-hml-demo`, então não encontro nada.
+- [x] CA2. Dado a homologação com 2 intervalos reais, quando ligo o demo, recrio os dados e saio do demo, então os 2 intervalos continuam lá, iguais.
+- [x] CA3. Dado "agora" = quarta 2026-11-18 15:00, quando gero os dados, então há intervalos de segunda 2026-11-09 até quarta 2026-11-18, nenhum começa ou termina depois das 15:00 de quarta, e só o último está aberto, começando 14:30.
+- [x] CA4. Dados gerados com o mesmo "agora" duas vezes são iguais (com os mesmos ids).
+- [x] CA5. Nos dados gerados, a semana anterior tem um dia sem meta e exatamente um dia irregular (`isIrregularDay`), por sobreposição. Nenhum outro dia é irregular.
+- [x] CA6. Nos dados gerados há intervalos com e sem task, declarados e não declarados, com e sem projeto, e todos passam nas validações do repositório (projeto até 15 caracteres, ids inteiros positivos, fim depois do início).
+- [x] CA7. Dado "agora" = segunda 07:00, então a semana atual não tem intervalos e a anterior está completa. Dado "agora" = domingo 20:00, então a semana atual tem todos os dias úteis completos e nenhum intervalo aberto.
+- [x] CA8. Com o demo ligado, o selo mostra "Homologação · Demo", e as telas Hoje, Semana, Período e Dados cabem em 390 px, nos temas claro e escuro.
 
 ## Fora do escopo
 
@@ -50,9 +50,9 @@ Para revisar a interface na homologação, hoje é preciso bater pontos à mão 
 
 ## Desenho
 
-- `src/lib/demo.ts` (puro, com teste): `buildDemoData(now, settings)` devolve um `BackupData` (o mesmo tipo do backup: intervalos, dias sem meta e configurações). Ele monta os dias a partir de um roteiro fixo por dia da semana (horários, textos, projetos, ids), recortado em `now`. Ids no formato `demo-AAAA-MM-DD-N`. Usa `startOfWeek`/`weekStart` de `src/lib/time.ts`.
+- `src/lib/demo.ts` (puro, com teste): `buildDemoData(now)` devolve um `BackupData` (o mesmo tipo do backup: intervalos, dias sem meta e configurações). Ele monta os dias a partir de um roteiro fixo por dia da semana (horários, textos, projetos, ids), recortado em `now`. Ids no formato `demo-AAAA-MM-DD-N`. Usa `weekRange` de `src/lib/time.ts`.
 - `src/lib/env.ts`: ganha `DEMO_DB_NAME = 'ponto-hml-demo'`, e `DB_NAME` passa a ser ele quando `IS_HML` e o `localStorage` tem `ponto-hml:demo = '1'`. Ganha `IS_DEMO`. Em produção, `IS_HML` é `false` em tempo de build, então a leitura do `localStorage` some do bundle. A leitura fica num `try/catch` (navegação privada).
-- Ligar o demo: grava o `localStorage`, abre um `PontoDb(DEMO_DB_NAME)`, chama `replaceAll(buildDemoData(new Date(), DEFAULT_SETTINGS))` e recarrega em `#/hoje`. Recriar faz o mesmo sobre o banco demo. Sair apaga a chave e recarrega. Isso fica em `src/db/demo.ts`, porque só `src/db/` abre um `PontoDb`, e a tela importa esse módulo com `import()` dentro de `if (IS_HML)`, para o gerador não entrar no bundle de produção.
+- Ligar o demo: grava o `localStorage`, abre um `PontoDb(DEMO_DB_NAME)`, chama `replaceAll(buildDemoData(new Date()))` e recarrega em `#/hoje`. Recriar faz o mesmo sobre o banco demo. Sair apaga a chave e recarrega. Isso fica em `src/db/demo.ts`, porque só `src/db/` abre um `PontoDb`, e a aba Dados carrega `DemoSection` com `lazy(() => import(…))` atrás de `import.meta.env.VITE_APP_ENV === 'hml'`, para o gerador não entrar no bundle de produção. (Um `IS_HML` importado não basta: o build não corta o `import()` através de módulos.)
 - `DataScreen`: bloco `DemoSection` renderizado só com `IS_HML`. `App`: selo com "· Demo" quando `IS_DEMO`.
 - `lastBackup`: chave `ponto-hml-demo:lastBackupAt` no demo (deriva de `DB_NAME`), para o aviso de backup da homologação real não mudar.
 - Sem mudança no schema do Dexie: o banco demo usa as mesmas versões e migrações.
@@ -60,9 +60,9 @@ Para revisar a interface na homologação, hoje é preciso bater pontos à mão 
 
 ## Tarefas
 
-- [ ] T1. `lib/demo.ts` + testes (CA3–CA7).
-- [ ] T2. `IS_DEMO` e `DB_NAME` em `lib/env.ts`, `db/demo.ts` (ligar, recriar, sair) + teste com `fake-indexeddb` de que o banco `ponto-hml` não muda (CA2).
-- [ ] T3. Bloco Modo demo na aba Dados, selo "Homologação · Demo" e nome do backup demo.
-- [ ] T4. Build de produção sem o demo (CA1).
-- [ ] T5. Conferência headless no build de homologação, 390 px, claro e escuro (CA8).
-- [ ] T6. Atualizar ARCHITECTURE.md, PRODUCT.md (se couber), AGENTS.md e o índice de specs.
+- [x] T1. `lib/demo.ts` + testes (CA3–CA7).
+- [x] T2. `IS_DEMO` e `DB_NAME` em `lib/env.ts`, `db/demo.ts` (ligar, recriar, sair) + teste com `fake-indexeddb` de que o banco `ponto-hml` não muda (CA2).
+- [x] T3. Bloco Modo demo na aba Dados, selo "Homologação · Demo" e nome do backup demo.
+- [x] T4. Build de produção sem o demo (CA1).
+- [x] T5. Conferência headless no build de homologação, 390 px, claro e escuro (CA8).
+- [x] T6. Atualizar ARCHITECTURE.md, PRODUCT.md (se couber), AGENTS.md e o índice de specs.

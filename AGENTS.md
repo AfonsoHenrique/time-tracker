@@ -46,19 +46,22 @@ src/
     devops.ts       # ids de work item/task, projeto e padrões para dados antigos
     settings.ts     # validação das configurações (repositório e backup)
     backup.ts       # arquivo de backup: montar, validar, resumo e aviso de backup
+    demo.ts         # dados fictícios do modo demo da homologação
+    env.ts          # ambiente (IS_HML, IS_DEMO) e nome do banco
     sync.ts         # chaves, conflito (última gravação vence) e plano do primeiro login
     test-helpers.ts # at() e iv() para montar instantes e intervalos nos testes
     *.test.ts       # testes ao lado do código
   db/
     schema.ts       # Dexie (PontoDb): tabelas, índices e migrações (versão 4)
     repository.ts   # única porta de entrada para os dados (getRepository), com fila da sincronização
+    demo.ts         # liga, recria e desliga o modo demo (banco separado)
   sync/             # engine (ciclo enviar/receber, primeiro login), autoSync (gatilhos), firestoreRemote, memoryRemote
   features/
     shared/         # useRangeData (semana ou período), useNow, useRoute, ExportPanel, errors, lastBackup
     today/          # tela Hoje: TodayScreen, IntervalSheet
     week/           # tela Semana: WeekScreen
     period/         # tela Período: PeriodScreen
-    data/           # aba Dados: DataScreen (backup, restaurar, armazenamento)
+    data/           # aba Dados: DataScreen (backup, restaurar, armazenamento) e DemoSection (só hml)
   components/       # TabBar, Stat/BalanceStat: visuais, sem regra de negócio
 firebase/           # firestore.rules e testes nos emuladores
 docs/               # produto, arquitetura, ADRs e specs
@@ -89,7 +92,7 @@ docs/               # produto, arquitetura, ADRs e specs
 | Ambiente | Branch | URL | Banco IndexedDB |
 |---|---|---|---|
 | Produção | `main` | `/time-tracker/` | `ponto` |
-| Homologação | `develop` | `/time-tracker/hml/` | `ponto-hml` |
+| Homologação | `develop` | `/time-tracker/hml/` | `ponto-hml` (modo demo: `ponto-hml-demo`) |
 
 Use `DB_NAME` e `IS_HML` de `src/lib/env.ts`; nunca escreva o nome do banco à mão.
 

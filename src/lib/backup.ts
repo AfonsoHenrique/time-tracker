@@ -29,8 +29,9 @@ export function buildBackup(data: BackupData, now: Date, env: AppEnv): BackupFil
   return { app: 'ponto', version: BACKUP_VERSION, exportedAt: now.toISOString(), env, ...data }
 }
 
-export function backupFileName(now: Date): string {
-  return `ponto-backup-${dayKey(now)}.json`
+/** Nome do arquivo de backup. No modo demo da homologação, leva `demo` no nome. */
+export function backupFileName(now: Date, demo = false): string {
+  return `ponto-backup-${demo ? 'demo-' : ''}${dayKey(now)}.json`
 }
 
 export interface BackupSummary {

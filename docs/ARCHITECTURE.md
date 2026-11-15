@@ -110,12 +110,22 @@ Regras do Firestore em `firebase/firestore.rules`: cada usuário só lê e grava
 
 ## Ambientes
 
-O build lê `VITE_APP_ENV` (`prod` padrão, ou `hml`) em `vite.config.ts`, e isso define base, nome, cor e manifest. Em tempo de execução, `src/lib/env.ts` expõe `APP_ENV`, `IS_HML` e `DB_NAME`.
+O build lê `VITE_APP_ENV` (`prod` padrão, ou `hml`) em `vite.config.ts`, e isso define base, nome, cor e manifest. Em tempo de execução, `src/lib/env.ts` expõe `APP_ENV`, `IS_HML`, `IS_DEMO` e `DB_NAME`.
 
 Os dois ambientes ficam na **mesma origem** (`afonsohenrique.github.io`):
 
 - O IndexedDB é separado por origem, por isso cada ambiente usa um `DB_NAME` diferente.
 - O service worker de produção tem escopo `/time-tracker/`, que contém `/hml/`. Por isso a produção usa `navigateFallbackDenylist` para `/time-tracker/hml/`.
+
+### Modo demo (só homologação)
+
+Spec 010. Na homologação, a aba Dados liga um modo demo que preenche a semana anterior e a atual com dados fictícios:
+
+- O gerador é puro e determinístico: `buildDemoData(now)`, em `src/lib/demo.ts`.
+- Os dados ficam num banco separado (`DEMO_DB_NAME = 'ponto-hml-demo'`). Com `ponto-hml:demo = '1'` no `localStorage`, `DB_NAME` aponta para ele, e o selo diz "Homologação · Demo". Ligar, recriar e sair gravam a chave e recarregam a página (`src/db/demo.ts`). O banco `ponto-hml` nunca é aberto pelo demo.
+- A data do último backup segue o `DB_NAME`, então o demo tem a sua (`ponto-hml-demo:lastBackupAt`).
+- O demo nunca sincroniza (spec 010, R10). Hoje o `startAutoSync` ainda não é chamado pela interface. Quando o login da spec 008 (T6) passar a chamá-lo, ele não deve rodar com `IS_DEMO`, senão os dados fictícios sobem para `envs/hml`.
+- Para o demo não entrar no build de produção, as condições usam `import.meta.env.VITE_APP_ENV === 'hml'` direto (o Vite troca por texto e o minificador corta o ramo), e a aba Dados carrega `DemoSection` com `lazy(() => import(…))`. Um `IS_HML` importado de outro módulo não basta para o build cortar o `import()`.
 
 ## Deploy
 

@@ -32,7 +32,7 @@ Uso pessoal de um profissional PJ, sem controle formal da empresa. O app serve p
 - **Semana**: uma linha por dia com trabalhado, meta e alerta de irregularidade; totais; setas ‹ › para trocar de semana.
 - **Período 26–25**: totais e semanas, com exportação.
 - **Semana** também exporta os seus dias, porque a planilha é preenchida por semana.
-- **Dados**: baixar backup em JSON (`ponto-backup-AAAA-MM-DD.json`, com intervalos, dias sem meta e configurações), restaurar um backup (mostra um resumo e pede confirmação antes de substituir tudo) e ver se o navegador prometeu não apagar os dados. O backup serve para trocar de aparelho e para levar dados entre produção e homologação.
+- **Dados**: baixar backup em JSON (`ponto-backup-AAAA-MM-DD.json`, com intervalos, dias sem meta e configurações), restaurar um backup (mostra um resumo e pede confirmação antes de substituir tudo) e ver se o navegador prometeu não apagar os dados. O backup serve para trocar de aparelho e para levar dados entre produção e homologação. Só na homologação, a aba também tem o **modo demo**, que mostra o app com uma semana e meia de dados fictícios num banco separado, sem tocar nos dados reais (spec 010).
 
 ## Dias irregulares
 
