@@ -7,6 +7,9 @@ export interface IntervalValues {
   start: Date
   end: Date | null
   note: string
+  workItemId: number | null
+  taskId: number | null
+  declared: boolean
 }
 
 interface Props {
@@ -92,6 +95,43 @@ export function IntervalSheet({ day, interval, onSave, onDelete, onClose }: Prop
             onChange={(e) => update({ note: e.target.value })}
           />
         </label>
+
+        <fieldset className="sheet-devops">
+          <legend>Azure DevOps</legend>
+          <div className="sheet-times">
+            <label>
+              Work item
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={form.workItem}
+                placeholder="Opcional"
+                onChange={(e) => update({ workItem: e.target.value })}
+              />
+            </label>
+            <label>
+              Task
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={form.task}
+                placeholder="Opcional"
+                onChange={(e) => update({ task: e.target.value })}
+              />
+            </label>
+          </div>
+          <p className="sheet-hint">A task é a filha do work item onde as horas são declaradas.</p>
+          <label className="sheet-check">
+            <input
+              type="checkbox"
+              checked={form.declared}
+              onChange={(e) => update({ declared: e.target.checked })}
+            />
+            Declarado no Azure DevOps
+          </label>
+        </fieldset>
 
         {error && (
           <p className="sheet-error" role="alert">

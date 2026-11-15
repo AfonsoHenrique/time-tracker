@@ -20,5 +20,6 @@ Status: Rascunho → Pronta → Em andamento → Concluída.
 | [002-tela-hoje](002-tela-hoje.md) | 3. Tela Hoje | Concluída |
 | [003-semana-e-navegacao](003-semana-e-navegacao.md) | 4. Semana e navegação | Concluída |
 | [004-periodo-e-exportacao](004-periodo-e-exportacao.md) | 5. Período e exportação | Concluída |
+| [005-azure-devops-no-intervalo](005-azure-devops-no-intervalo.md) | 5.1. Campos do Azure DevOps no intervalo | Concluída |
 
-Próximas: 005 backup e persistência.
+Próximas: 006 backup e persistência (o backup leva os campos da spec 005).

@@ -22,7 +22,8 @@ Uso pessoal de um profissional PJ, sem controle formal da empresa. O app serve p
 
 - Botão Entrar/Sair grava o **minuto exato**. Nada é arredondado automaticamente.
 - Intervalos podem ser adicionados, editados e apagados livremente.
-- Cada intervalo tem uma **observação** opcional. Não há campo de task por intervalo.
+- Cada intervalo tem uma **observação** opcional.
+- Cada intervalo pode ter o **work item** do Azure DevOps e a **task** filha onde as horas são declaradas (ids, opcionais), e a marca **Declarado** (padrão: não), que diz se as horas já foram lançadas no Azure DevOps. Ex.: `09:00–09:30 Daily equipe IA · WI 123567 · Task 123568 · Declarado`.
 - Nada é apagado automaticamente.
 
 ## Telas
@@ -52,7 +53,7 @@ Mesmas colunas da aba SEMANA da planilha `HORAS.xlsx`:
 
 - Uma linha por intervalo, mais recente primeiro.
 - SEMANA = `seg`…`dom`; DATA = `dd/mm/aaaa`; INICIO/FIM = `HH:MM`; Soma = `H:MM`.
-- Descricao = observação; TASK, Projeto e Detalhe em branco.
+- Descricao = observação; TASK = id da task do Azure DevOps (vazio se não houver); Projeto e Detalhe em branco.
 - Saídas: botão "Copiar para o Excel" (TSV na área de transferência, **sem cabeçalho**, para colar embaixo das linhas que já existem) e download `.csv` (**com cabeçalho**, `;`, UTF-8 com BOM).
 - Intervalo em andamento não entra; a tela avisa quantos ficaram de fora.
 - Intervalo que passa da meia-noite sai numa linha só, no dia do início.

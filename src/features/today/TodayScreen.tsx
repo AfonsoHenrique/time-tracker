@@ -4,6 +4,7 @@ import { BalanceStat, Stat } from '../../components/Stat'
 import { getRepository } from '../../db/repository'
 import { intervalMinutes, intervalsOfDay, summarizeDay, summarizeWeek } from '../../lib/balance'
 import { formatDayTitle, formatElapsed, formatShortDay, formatTime } from '../../lib/clock'
+import { formatDevOpsRefs } from '../../lib/devops'
 import { formatDuration } from '../../lib/duration'
 import { describeIrregularity, findIrregularities } from '../../lib/irregular'
 import { dayKey, isWorkDay, parseDayKey } from '../../lib/time'
@@ -171,6 +172,7 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
                   </span>
                   <span className="interval-duration">{formatDuration(intervalMinutes(interval, now))}</span>
                   {interval.note && <span className="interval-note">{interval.note}</span>}
+                  <DevOpsLine interval={interval} />
                 </button>
               </li>
             ))}
@@ -193,5 +195,17 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
         />
       )}
     </>
+  )
+}
+
+/** Work item, task e se já foi declarado, numa linha abaixo da observação. Some se não houver nada. */
+function DevOpsLine({ interval }: { interval: Interval }) {
+  const refs = formatDevOpsRefs(interval)
+  if (!refs && !interval.declared) return null
+  return (
+    <span className="interval-devops">
+      {refs}
+      {interval.declared && <span className="interval-declared">{refs && ' · '}✓ Declarado</span>}
+    </span>
   )
 }

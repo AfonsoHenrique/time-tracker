@@ -124,6 +124,17 @@
   overflow-wrap: anywhere;
 }
 
+.interval-devops {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.interval-declared {
+  color: var(--ok);
+}
+
 .empty {
   margin: 0 0 12px;
 }
@@ -195,4 +206,42 @@
 .sheet-confirm {
   margin-right: auto;
   font-weight: 600;
+}
+
+.sheet-devops {
+  /* Um fieldset não encolhe abaixo do conteúdo por padrão, e os campos vazariam da folha. */
+  min-width: 0;
+  margin: 0 0 4px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.sheet-devops input {
+  min-width: 0;
+}
+
+.sheet-devops .sheet-times {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.sheet-devops legend {
+  padding: 0 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.sheet .sheet-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 1rem;
+}
+
+.sheet .sheet-check input {
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  margin: 0;
 }

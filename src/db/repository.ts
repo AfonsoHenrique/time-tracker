@@ -1,4 +1,5 @@
 import { parseISO, startOfMinute } from 'date-fns'
+import { isDevOpsId } from '../lib/devops'
 import { dayEndInstant, dayStartInstant, isDayKey } from '../lib/time'
 import { DEFAULT_SETTINGS, type DayOff, type Interval, type Settings } from '../lib/types'
 import { PontoDb, SETTINGS_ID } from './schema'
@@ -26,12 +27,21 @@ export interface NewInterval {
   /** Vazio ou `null` cria um intervalo em andamento. */
   end?: Date | string | null
   note?: string
+  /** Work item do Azure DevOps; vazio = sem work item. */
+  workItemId?: number | null
+  /** Task filha do work item, onde as horas são declaradas; vazio = sem task. */
+  taskId?: number | null
+  /** Se as horas já foram lançadas no Azure DevOps. Padrão: `false`. */
+  declared?: boolean
 }
 
 export interface IntervalPatch {
   start?: Date | string
   end?: Date | string | null
   note?: string
+  workItemId?: number | null
+  taskId?: number | null
+  declared?: boolean
 }
 
 /** Guarda sempre em UTC e no minuto exato: o app não guarda segundos nem arredonda para múltiplos de 15. */
@@ -48,6 +58,14 @@ function assertOrder(start: string, end: string | null) {
   if (end !== null && end < start) {
     throw new RepositoryError('invalid-interval', 'O fim não pode ser antes do início.')
   }
+}
+
+function devOpsId(value: number | null | undefined, label: string): number | null {
+  if (value == null) return null
+  if (!isDevOpsId(value)) {
+    throw new RepositoryError('invalid-interval', `${label} deve ser um número inteiro positivo.`)
+  }
+  return value
 }
 
 function assertDayKey(date: string) {
@@ -90,6 +108,9 @@ export function createRepository(db: PontoDb) {
       start,
       end,
       note: input.note ?? '',
+      workItemId: devOpsId(input.workItemId, 'O work item'),
+      taskId: devOpsId(input.taskId, 'A task'),
+      declared: input.declared ?? false,
       createdAt: now,
       updatedAt: now,
     }
@@ -137,6 +158,9 @@ export function createRepository(db: PontoDb) {
           start,
           end,
           note: patch.note ?? current.note,
+          workItemId: patch.workItemId === undefined ? current.workItemId : devOpsId(patch.workItemId, 'O work item'),
+          taskId: patch.taskId === undefined ? current.taskId : devOpsId(patch.taskId, 'A task'),
+          declared: patch.declared ?? current.declared,
           updatedAt: new Date().toISOString(),
         }
         await db.intervals.put(updated)

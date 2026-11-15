@@ -41,10 +41,11 @@ src/
     clock.ts        # cronômetro, títulos de dia e semana, horas HH:MM e formulário de intervalo
     route.ts        # rota no hash da URL (#/hoje/…, #/semana/…, #/periodo/…)
     export.ts       # linhas da planilha HORAS.xlsx, TSV e CSV
+    devops.ts       # ids de work item/task do Azure DevOps e padrões para dados antigos
     test-helpers.ts # at() e iv() para montar instantes e intervalos nos testes
     *.test.ts       # testes ao lado do código
   db/
-    schema.ts       # Dexie (PontoDb): tabelas e índices
+    schema.ts       # Dexie (PontoDb): tabelas, índices e migrações (versão 2)
     repository.ts   # única porta de entrada para os dados (getRepository)
   features/
     shared/         # useRangeData (semana ou período), useNow, useRoute, ExportPanel, errors
