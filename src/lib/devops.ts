@@ -1,4 +1,4 @@
-import { EMPTY_DEVOPS_FIELDS, type Interval } from './types'
+import { EMPTY_DEVOPS_FIELDS, PROJECT_MAX_LENGTH, type Interval } from './types'
 
 /** Maior id aceito: os ids de work item do Azure DevOps são inteiros de 32 bits. */
 const MAX_ID = 2_147_483_647
@@ -27,12 +27,19 @@ export function devOpsIdToText(value: number | null): string {
   return value === null ? '' : String(value)
 }
 
-type StoredInterval = Omit<Interval, 'workItemId' | 'taskId' | 'declared'> &
-  Partial<Record<'workItemId' | 'taskId' | 'declared', unknown>>
+/** Projeto sem espaços nas pontas. Diz se cabe no limite de `PROJECT_MAX_LENGTH` caracteres. */
+export function normalizeProject(text: string): { ok: true; value: string } | { ok: false } {
+  const value = text.trim()
+  return value.length <= PROJECT_MAX_LENGTH ? { ok: true, value } : { ok: false }
+}
+
+type DevOpsField = 'workItemId' | 'taskId' | 'declared' | 'project'
+type StoredInterval = Omit<Interval, DevOpsField> & Partial<Record<DevOpsField, unknown>>
 
 /**
- * Completa um intervalo gravado antes dos campos do Azure DevOps (banco na versão 1 ou backup
- * antigo): sem work item, sem task e não declarado. Valores inválidos também viram o padrão.
+ * Completa um intervalo gravado antes dos campos do Azure DevOps (banco na versão 1 ou 2, ou backup
+ * antigo): sem work item, sem task, não declarado e sem projeto. Valores inválidos também viram o
+ * padrão, e um projeto longo demais é cortado no limite.
  */
 export function withDevOpsDefaults(row: StoredInterval): Interval {
   return {
@@ -40,6 +47,10 @@ export function withDevOpsDefaults(row: StoredInterval): Interval {
     workItemId: isDevOpsId(row.workItemId) ? row.workItemId : EMPTY_DEVOPS_FIELDS.workItemId,
     taskId: isDevOpsId(row.taskId) ? row.taskId : EMPTY_DEVOPS_FIELDS.taskId,
     declared: row.declared === true,
+    project:
+      typeof row.project === 'string'
+        ? row.project.trim().slice(0, PROJECT_MAX_LENGTH)
+        : EMPTY_DEVOPS_FIELDS.project,
   }
 }
 

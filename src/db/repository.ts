@@ -1,9 +1,9 @@
 import { parseISO, startOfMinute } from 'date-fns'
 import type { BackupData } from '../lib/backup'
-import { isDevOpsId } from '../lib/devops'
-import { dayEndInstant, dayStartInstant, isDayKey } from '../lib/time'
+import { isDevOpsId, normalizeProject } from '../lib/devops'
 import { settingsProblem } from '../lib/settings'
-import { DEFAULT_SETTINGS, type DayOff, type Interval, type Settings } from '../lib/types'
+import { dayEndInstant, dayStartInstant, isDayKey } from '../lib/time'
+import { DEFAULT_SETTINGS, PROJECT_MAX_LENGTH, type DayOff, type Interval, type Settings } from '../lib/types'
 import { PontoDb, SETTINGS_ID } from './schema'
 
 export type RepositoryErrorCode =
@@ -35,6 +35,8 @@ export interface NewInterval {
   taskId?: number | null
   /** Se as horas já foram lançadas no Azure DevOps. Padrão: `false`. */
   declared?: boolean
+  /** Projeto, até 15 caracteres; vazio = sem projeto. */
+  project?: string
 }
 
 export interface IntervalPatch {
@@ -44,6 +46,7 @@ export interface IntervalPatch {
   workItemId?: number | null
   taskId?: number | null
   declared?: boolean
+  project?: string
 }
 
 /** Guarda sempre em UTC e no minuto exato: o app não guarda segundos nem arredonda para múltiplos de 15. */
@@ -68,6 +71,14 @@ function devOpsId(value: number | null | undefined, label: string): number | nul
     throw new RepositoryError('invalid-interval', `${label} deve ser um número inteiro positivo.`)
   }
   return value
+}
+
+function project(value: string | undefined): string {
+  const result = normalizeProject(value ?? '')
+  if (!result.ok) {
+    throw new RepositoryError('invalid-interval', `O projeto deve ter no máximo ${PROJECT_MAX_LENGTH} caracteres.`)
+  }
+  return result.value
 }
 
 function assertDayKey(date: string) {
@@ -114,6 +125,7 @@ export function createRepository(db: PontoDb) {
       workItemId: devOpsId(input.workItemId, 'O work item'),
       taskId: devOpsId(input.taskId, 'A task'),
       declared: input.declared ?? false,
+      project: project(input.project),
       createdAt: now,
       updatedAt: now,
     }
@@ -164,6 +176,7 @@ export function createRepository(db: PontoDb) {
           workItemId: patch.workItemId === undefined ? current.workItemId : devOpsId(patch.workItemId, 'O work item'),
           taskId: patch.taskId === undefined ? current.taskId : devOpsId(patch.taskId, 'A task'),
           declared: patch.declared ?? current.declared,
+          project: patch.project === undefined ? current.project : project(patch.project),
           updatedAt: new Date().toISOString(),
         }
         await db.intervals.put(updated)

@@ -7,12 +7,12 @@ export function at(local: string): string {
 
 let counter = 0
 
-/** Intervalo de teste com horários locais; sem `end`, fica em andamento. `devOps` preenche work item, task e declarado. */
+/** Intervalo de teste com horários locais; sem `end`, fica em andamento. `devOps` preenche work item, task, declarado e projeto. */
 export function iv(
   start: string,
   end: string | null = null,
   note = '',
-  devOps: Partial<Pick<Interval, 'workItemId' | 'taskId' | 'declared'>> = {},
+  devOps: Partial<Pick<Interval, 'workItemId' | 'taskId' | 'declared' | 'project'>> = {},
 ): Interval {
   counter += 1
   return {

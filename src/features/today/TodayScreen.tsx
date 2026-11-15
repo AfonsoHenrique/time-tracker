@@ -202,9 +202,9 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
   )
 }
 
-/** Work item, task e se já foi declarado, numa linha abaixo da observação. Some se não houver nada. */
+/** Projeto, work item, task e se já foi declarado, numa linha abaixo da observação. Some se não houver nada. */
 function DevOpsLine({ interval }: { interval: Interval }) {
-  const refs = formatDevOpsRefs(interval)
+  const refs = [interval.project, formatDevOpsRefs(interval)].filter(Boolean).join(' · ')
   if (!refs && !interval.declared) return null
   return (
     <span className="interval-devops">

@@ -5,8 +5,11 @@ import { formatDuration } from './duration'
 import { dayKey } from './time'
 import type { DayRange, Interval } from './types'
 
-/** Colunas da aba SEMANA da planilha `HORAS.xlsx`. */
-export const EXPORT_HEADER = ['SEMANA', 'DATA', 'INICIO', 'FIM', 'Soma', 'Descricao', 'TASK', 'Projeto', 'Detalhe']
+/**
+ * Colunas da aba SEMANA da planilha `HORAS.xlsx`, mais `Work item` na ponta direita, fora das
+ * colunas da planilha, para colar sem deslocar nada.
+ */
+export const EXPORT_HEADER = ['SEMANA', 'DATA', 'INICIO', 'FIM', 'Soma', 'Descricao', 'TASK', 'Projeto', 'Detalhe', 'Work item']
 
 const WEEKDAYS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
 
@@ -18,8 +21,8 @@ function inRange(interval: Interval, range: DayRange): boolean {
 /**
  * Linhas para a planilha: uma por intervalo fechado que começa na faixa, do mais recente para o
  * mais antigo. A linha fica no dia do início, mesmo que o intervalo passe da meia-noite.
- * TASK leva o id da task do Azure DevOps, quando houver. Projeto e Detalhe ficam vazios para o
- * usuário preencher.
+ * TASK leva o id da task do Azure DevOps e Projeto o projeto do intervalo, quando houver. Detalhe
+ * fica vazio. A última coluna leva o id do work item.
  */
 export function exportRows(intervals: readonly Interval[], range: DayRange): string[][] {
   return intervals
@@ -35,8 +38,9 @@ export function exportRows(intervals: readonly Interval[], range: DayRange): str
         formatDuration(intervalMinutes(interval, start)),
         interval.note,
         interval.taskId === null ? '' : String(interval.taskId),
+        interval.project,
         '',
-        '',
+        interval.workItemId === null ? '' : String(interval.workItemId),
       ]
     })
 }

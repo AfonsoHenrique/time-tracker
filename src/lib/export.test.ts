@@ -8,21 +8,23 @@ describe('exportRows', () => {
   it('uma linha por intervalo, do mais recente para o mais antigo (CA4)', () => {
     const rows = exportRows([iv('2026-11-09 08:00', '2026-11-09 12:00', 'daily'), iv('2026-11-09 13:00', '2026-11-09 17:30')], week)
     expect(rows).toEqual([
-      ['seg', '09/11/2026', '13:00', '17:30', '4:30', '', '', '', ''],
-      ['seg', '09/11/2026', '08:00', '12:00', '4:00', 'daily', '', '', ''],
+      ['seg', '09/11/2026', '13:00', '17:30', '4:30', '', '', '', '', ''],
+      ['seg', '09/11/2026', '08:00', '12:00', '4:00', 'daily', '', '', '', ''],
     ])
     expect(rows[0]).toHaveLength(EXPORT_HEADER.length)
   })
 
-  it('spec 005 CA5: TASK leva o id da task; work item e declarado não viram coluna', () => {
+  it('spec 007 CA3: TASK leva a task, Projeto o projeto e a última coluna o work item', () => {
     const daily = iv('2026-11-09 09:00', '2026-11-09 09:30', 'Daily equipe IA', {
       workItemId: 123567,
       taskId: 123568,
       declared: true,
+      project: 'Equipe IA',
     })
     expect(exportRows([daily], week)).toEqual([
-      ['seg', '09/11/2026', '09:00', '09:30', '0:30', 'Daily equipe IA', '123568', '', ''],
+      ['seg', '09/11/2026', '09:00', '09:30', '0:30', 'Daily equipe IA', '123568', 'Equipe IA', '', '123567'],
     ])
+    expect(EXPORT_HEADER.at(-1)).toBe('Work item')
   })
 
   it('ordena por data entre dias diferentes e usa o dia da semana em minúsculas', () => {
@@ -35,7 +37,7 @@ describe('exportRows', () => {
 
   it('intervalo que passa da meia-noite fica numa linha, no dia do início (CA6)', () => {
     expect(exportRows([iv('2026-11-10 22:00', '2026-11-11 01:30')], week)).toEqual([
-      ['ter', '10/11/2026', '22:00', '01:30', '3:30', '', '', '', ''],
+      ['ter', '10/11/2026', '22:00', '01:30', '3:30', '', '', '', '', ''],
     ])
   })
 
@@ -65,9 +67,9 @@ describe('toTsv', () => {
 
 describe('toCsv', () => {
   it('tem BOM, cabeçalho, ; e \\r\\n', () => {
-    const csv = toCsv([['seg', '09/11/2026', '08:00', '12:00', '4:00', 'reunião', '', '', '']])
+    const csv = toCsv([['seg', '09/11/2026', '08:00', '12:00', '4:00', 'reunião', '', '', '', '']])
     expect(csv).toBe(
-      '﻿SEMANA;DATA;INICIO;FIM;Soma;Descricao;TASK;Projeto;Detalhe\r\nseg;09/11/2026;08:00;12:00;4:00;reunião;;;\r\n',
+      '﻿SEMANA;DATA;INICIO;FIM;Soma;Descricao;TASK;Projeto;Detalhe;Work item\r\nseg;09/11/2026;08:00;12:00;4:00;reunião;;;;\r\n',
     )
   })
 
