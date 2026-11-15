@@ -228,7 +228,50 @@ describe('campos do Azure DevOps (spec 005)', () => {
 
     const migrated = createRepository(new PontoDb('migracao', { indexedDB, IDBKeyRange }))
     expect(await migrated.listIntervals('2026-11-09', '2026-11-09')).toEqual([
-      { ...old, workItemId: null, taskId: null, declared: false },
+      { ...old, workItemId: null, taskId: null, declared: false, project: '' },
     ])
+  })
+})
+
+describe('projeto (spec 007)', () => {
+  it('CA1: grava e edita o projeto; o padrão é vazio', async () => {
+    const created = await repo.createInterval({
+      start: '2026-11-09T09:00',
+      end: '2026-11-09T09:30',
+      project: ' Equipe IA ',
+    })
+    expect(created.project).toBe('Equipe IA')
+    expect((await repo.updateInterval(created.id, { note: 'daily' })).project).toBe('Equipe IA')
+    expect((await repo.updateInterval(created.id, { project: '' })).project).toBe('')
+    expect((await repo.startInterval(new Date('2026-11-09T10:00'))).project).toBe('')
+  })
+
+  it('CA2: projeto com mais de 15 caracteres falha com invalid-interval', async () => {
+    await expectCode(
+      repo.createInterval({ start: '2026-11-09T09:00', project: 'a'.repeat(16) }),
+      'invalid-interval',
+    )
+  })
+
+  it('CA4: abrir um banco da versão 2 deixa os intervalos sem projeto e mantém o resto', async () => {
+    const indexedDB = new IDBFactory()
+    const v2 = new Dexie('migracao-v2', { indexedDB, IDBKeyRange })
+    v2.version(2).stores({ intervals: 'id, start', daysOff: 'date', settings: 'id' })
+    const old = {
+      id: 'v2',
+      start: at('2026-11-09 09:00'),
+      end: at('2026-11-09 09:30'),
+      note: 'Daily equipe IA',
+      workItemId: 123567,
+      taskId: 123568,
+      declared: true,
+      createdAt: at('2026-11-09 09:00'),
+      updatedAt: at('2026-11-09 09:30'),
+    }
+    await v2.table('intervals').add(old)
+    v2.close()
+
+    const migrated = createRepository(new PontoDb('migracao-v2', { indexedDB, IDBKeyRange }))
+    expect(await migrated.listIntervals('2026-11-09', '2026-11-09')).toEqual([{ ...old, project: '' }])
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDevOpsRefs, isDevOpsId, parseDevOpsId, withDevOpsDefaults } from './devops'
+import { formatDevOpsRefs, isDevOpsId, normalizeProject, parseDevOpsId, withDevOpsDefaults } from './devops'
 import { at } from './test-helpers'
 
 describe('parseDevOpsId', () => {
@@ -42,7 +42,13 @@ describe('withDevOpsDefaults', () => {
   }
 
   it('spec 005 CA4: intervalo antigo fica sem work item, sem task e não declarado', () => {
-    expect(withDevOpsDefaults(old)).toEqual({ ...old, workItemId: null, taskId: null, declared: false })
+    expect(withDevOpsDefaults(old)).toEqual({
+      ...old,
+      workItemId: null,
+      taskId: null,
+      declared: false,
+      project: '',
+    })
   })
 
   it('mantém os campos que já existem e descarta valores inválidos', () => {
@@ -65,5 +71,34 @@ describe('formatDevOpsRefs', () => {
     expect(formatDevOpsRefs({ workItemId: 123567, taskId: null })).toBe('WI 123567')
     expect(formatDevOpsRefs({ workItemId: null, taskId: 123568 })).toBe('Task 123568')
     expect(formatDevOpsRefs({ workItemId: null, taskId: null })).toBe('')
+  })
+})
+
+describe('normalizeProject (spec 007)', () => {
+  it('tira os espaços das pontas e aceita até 15 caracteres', () => {
+    expect(normalizeProject('  Equipe IA ')).toEqual({ ok: true, value: 'Equipe IA' })
+    expect(normalizeProject('')).toEqual({ ok: true, value: '' })
+    expect(normalizeProject('a'.repeat(15))).toEqual({ ok: true, value: 'a'.repeat(15) })
+  })
+
+  it('CA2: recusa mais de 15 caracteres', () => {
+    expect(normalizeProject('a'.repeat(16))).toEqual({ ok: false })
+  })
+})
+
+describe('withDevOpsDefaults e projeto (spec 007)', () => {
+  const base = {
+    id: 'a',
+    start: at('2026-11-09 08:00'),
+    end: null,
+    note: '',
+    createdAt: at('2026-11-09 08:00'),
+    updatedAt: at('2026-11-09 08:00'),
+  }
+
+  it('mantém o projeto, corta o longo demais e descarta o que não é texto', () => {
+    expect(withDevOpsDefaults({ ...base, project: ' Equipe IA ' }).project).toBe('Equipe IA')
+    expect(withDevOpsDefaults({ ...base, project: 'x'.repeat(20) }).project).toBe('x'.repeat(15))
+    expect(withDevOpsDefaults({ ...base, project: 42 }).project).toBe('')
   })
 })

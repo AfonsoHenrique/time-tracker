@@ -54,6 +54,7 @@ interface Interval {
   workItemId: number | null  // work item do Azure DevOps (ex.: 123567)
   taskId: number | null      // task filha onde as horas são declaradas (ex.: 123568)
   declared: boolean          // horas já lançadas no Azure DevOps
+  project: string            // projeto, até 15 caracteres ('' = sem projeto)
   createdAt: string
   updatedAt: string
 }
@@ -78,12 +79,13 @@ Versões do schema (`src/db/schema.ts`):
 
 - **1**: tabelas `intervals`, `daysOff` e `settings`.
 - **2** (spec 005): campos do Azure DevOps no intervalo. Mesmos índices; o `upgrade` aplica `withDevOpsDefaults` de `src/lib/devops.ts`, que também serve para importar backups antigos.
+- **3** (spec 007): projeto no intervalo. Mesmos índices e o mesmo `upgrade`.
 
 Regras de gravação (`src/db/repository.ts`):
 
 - Só pode existir um intervalo em andamento. Abrir outro, ou reabrir um fechado, falha com `RepositoryError` de código `open-interval-exists`.
 - O fim não pode ser antes do início (`invalid-interval`).
-- Work item e task são inteiros positivos ou `null` (`invalid-interval`). Num patch, `undefined` mantém o valor e `null` limpa.
+- Work item e task são inteiros positivos ou `null`, e o projeto tem no máximo 15 caracteres (`invalid-interval`). Num patch, `undefined` mantém o valor e `null` limpa.
 - Intervalos fechados podem se sobrepor: o destaque de dia irregular avisa, e o usuário corrige.
 - O intervalo aberto é achado por filtro, porque o IndexedDB não indexa `null`.
 

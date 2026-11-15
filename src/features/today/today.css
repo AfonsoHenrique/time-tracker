@@ -221,6 +221,10 @@
   min-width: 0;
 }
 
+.sheet-devops .sheet-project {
+  margin-bottom: 12px;
+}
+
 .sheet-devops .sheet-times {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }

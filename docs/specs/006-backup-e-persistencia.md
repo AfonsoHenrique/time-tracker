@@ -28,7 +28,7 @@ Na fase 1, os dados vivem só no navegador de cada aparelho. Se o Chrome limpar 
 - [ ] CA5. Antes de restaurar, a tela mostra o resumo e só substitui depois de "Substituir meus dados". Cancelar não muda nada.
 - [ ] CA6. Depois de baixar um backup, a aba Dados mostra "Último backup: hoje". Com o último backup há 15 dias, a tela Hoje mostra o aviso. Com o último backup há 3 dias, o aviso não aparece.
 - [ ] CA7. As quatro abas cabem em 390 px, nos temas claro e escuro.
-- [ ] CA8. Um backup cujos intervalos não têm `workItemId`, `taskId` e `declared` é restaurado com `null`, `null` e `false`. Um `taskId` que não é inteiro positivo dá erro com o número do intervalo.
+- [ ] CA8. Um backup cujos intervalos não têm `workItemId`, `taskId`, `declared` e `project` é restaurado com `null`, `null`, `false` e `''`. Um `taskId` que não é inteiro positivo, ou um `project` com mais de 15 caracteres, dá erro com o número do intervalo.
 
 ## Fora do escopo
 
@@ -40,12 +40,12 @@ Na fase 1, os dados vivem só no navegador de cada aparelho. Se o Chrome limpar 
 
 - `src/lib/backup.ts` (puro, com teste):
   - `buildBackup(data, now, env)` monta o objeto `{ app: 'ponto', version: 1, exportedAt, env, intervals, daysOff, settings }`.
-  - `parseBackup(text)` devolve `{ ok: true, data, summary }` ou `{ ok: false, error }`. Ele valida a estrutura, os instantes ISO, a ordem de início e fim, se há no máximo um intervalo aberto, os dias `AAAA-MM-DD`, as configurações e os ids do Azure DevOps (`isDevOpsId`). Campos do Azure DevOps ausentes são completados com `withDevOpsDefaults`, de `src/lib/devops.ts`.
+  - `parseBackup(text)` devolve `{ ok: true, data, summary }` ou `{ ok: false, error }`. Ele valida a estrutura, os instantes ISO, a ordem de início e fim, se há no máximo um intervalo aberto, os dias `AAAA-MM-DD`, as configurações os ids do Azure DevOps (`isDevOpsId`) e o projeto (`normalizeProject`, spec 007). Campos do Azure DevOps ausentes são completados com `withDevOpsDefaults`, de `src/lib/devops.ts`.
   - `isBackupDue(lastBackupAt, hasData, now)` decide o aviso.
 - O repositório ganha `exportAll()` e `replaceAll(data)`. O `replaceAll` limpa e regrava as três tabelas numa única transação Dexie, para cumprir R5.
 - A data do último backup fica no `localStorage`, com uma chave por ambiente (`ponto:lastBackupAt` e `ponto-hml:lastBackupAt`). Ela é só uma informação deste aparelho e não faz parte dos dados. Por isso não muda o schema do Dexie.
 - O backup não muda o schema e não precisa de migração. A versão do formato do backup (`version: 1`) é independente da versão do schema do Dexie.
-- Os campos do Azure DevOps e o `withDevOpsDefaults` vieram da spec 005 (PR #12, já na `develop`). O schema do Dexie está na versão 2, e o backup grava os intervalos já completos.
+- Os campos do Azure DevOps e o `withDevOpsDefaults` vieram da spec 005 (PR #12, já na `develop`). O projeto veio da spec 007, e o schema do Dexie está na versão 3. O backup grava os intervalos já completos.
 - Rota `#/dados` e aba **Dados** na `TabBar`.
 - O download usa o mesmo caminho do CSV (`Blob` e um link temporário). Para restaurar, um `<input type="file" accept="application/json">` lê o arquivo com `file.text()`.
 
