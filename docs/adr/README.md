@@ -8,4 +8,5 @@ Nome: `NNNN-titulo-curto.md`. Status: Proposto, Aceito ou Substituído.
 |---|---|---|
 | [0001](0001-dados-locais-indexeddb.md) | Dados só no aparelho (IndexedDB + Dexie) na fase 1 | Aceito |
 | [0002](0002-github-pages-com-homologacao.md) | GitHub Pages com homologação em `/hml/` | Aceito |
-| [0003](0003-firebase-na-fase-2.md) | Firebase para sincronização e login na fase 2 | Proposto |
+| [0003](0003-firebase-na-fase-2.md) | Firebase para sincronização e login na fase 2 | Substituído por 0004 |
+| [0004](0004-sincronizacao-dexie-firestore.md) | Sincronização: Dexie local com Firestore, login Microsoft e Google | Proposto |

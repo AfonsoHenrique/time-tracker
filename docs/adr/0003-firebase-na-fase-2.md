@@ -1,6 +1,6 @@
 # 0003. Firebase para sincronização e login na fase 2
 
-- **Status**: Proposto
+- **Status**: Substituído por [0004](0004-sincronizacao-dexie-firestore.md)
 - **Data**: 2026-11-08
 
 ## Contexto
