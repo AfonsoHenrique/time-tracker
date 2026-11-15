@@ -1,5 +1,7 @@
 import { differenceInSeconds, format, getISODay, parseISO } from 'date-fns'
 import { devOpsIdToText, normalizeProject, parseDevOpsId } from './devops'
+import { formatDuration } from './duration'
+import type { DayForecast } from './forecast'
 import { dayKey, parseDayKey } from './time'
 import { PROJECT_MAX_LENGTH, type DayRange, type Interval } from './types'
 
@@ -158,4 +160,18 @@ export function intervalToForm(
     declared: interval.declared,
     project: interval.project,
   }
+}
+
+/**
+ * Texto da previsão de saída do dia, ex.: "Saída prevista 17:32 · com 1:00 de almoço".
+ * `null` quando não há previsão. Uma hora de outro dia ganha "(amanhã)".
+ */
+export function formatForecast(forecast: DayForecast, date: string): string | null {
+  if (forecast.kind === 'none') return null
+  const time = (instant: Date) => `${format(instant, 'HH:mm')}${dayKey(instant) === date ? '' : ' (amanhã)'}`
+  if (forecast.kind === 'done') return `Meta fechada às ${time(forecast.at)}`
+  const base = `Saída prevista ${time(forecast.at)}`
+  if (forecast.returnBy !== null) return `${base} · se voltar até ${time(forecast.returnBy)}`
+  if (forecast.lunchMinutes > 0) return `${base} · com ${formatDuration(forecast.lunchMinutes)} de almoço`
+  return base
 }

@@ -1,6 +1,6 @@
 # 009. Previsão do horário de saída
 
-- **Status**: Rascunho
+- **Status**: Concluída
 - **Marco**: 3.1
 - **Relacionado**: [002-tela-hoje](002-tela-hoje.md), [001-dados-e-regras](001-dados-e-regras.md)
 
@@ -24,16 +24,16 @@ Durante o dia, a tela Hoje mostra quanto falta para a meta, mas não **a que hor
 
 ## Critérios de aceite
 
-- [ ] CA1. Dado entrada 08:32 e o relógio em 09:00 (dentro), então a saída prevista é 17:32, com 1:00 de almoço.
-- [ ] CA2. Dado 08:00–12:00 e o relógio em 12:20 (fora), então a saída prevista é 17:00 e o texto diz "se voltar até 13:00".
-- [ ] CA3. Dado 08:32–12:32 e 13:32–agora, com o relógio em 14:00, então a saída prevista é 17:32, sem almoço.
-- [ ] CA4. Dado 08:00–10:00 e 10:10–agora, com o relógio em 11:00 (pausa de 10 min, abaixo de 45), então a saída prevista é 17:10, com 1:00 de almoço.
-- [ ] CA5. Dado 08:00–agora, sem pausa, com o relógio em 14:30, então a saída prevista é 16:00, sem almoço (ficou tarde).
-- [ ] CA6. Dado primeira entrada às 13:00 e o relógio em 13:30, então a saída prevista é 21:00, sem almoço.
-- [ ] CA7. Dado 08:00–12:00 e 13:00–17:10, então aparece "Meta fechada às 17:00".
-- [ ] CA8. Num sábado, num dia sem meta ou num dia útil ainda sem intervalo, a previsão não aparece.
-- [ ] CA9. Na tela de ontem, a previsão não aparece.
-- [ ] CA10. A linha cabe em 390×800, nos temas claro e escuro, sem rolagem horizontal.
+- [x] CA1. Dado entrada 08:32 e o relógio em 09:00 (dentro), então a saída prevista é 17:32, com 1:00 de almoço.
+- [x] CA2. Dado 08:00–12:00 e o relógio em 12:20 (fora), então a saída prevista é 17:00 e o texto diz "se voltar até 13:00".
+- [x] CA3. Dado 08:32–12:32 e 13:32–agora, com o relógio em 14:00, então a saída prevista é 17:32, sem almoço.
+- [x] CA4. Dado 08:00–10:00 e 10:10–agora, com o relógio em 11:00 (pausa de 10 min, abaixo de 45), então a saída prevista é 17:10, com 1:00 de almoço.
+- [x] CA5. Dado 08:00–agora, sem pausa, com o relógio em 14:30, então a saída prevista é 16:00, sem almoço (ficou tarde).
+- [x] CA6. Dado primeira entrada às 13:00 e o relógio em 13:30, então a saída prevista é 21:00, sem almoço.
+- [x] CA7. Dado 08:00–12:00 e 13:00–17:10, então aparece "Meta fechada às 17:00".
+- [x] CA8. Num sábado, num dia sem meta ou num dia útil ainda sem intervalo, a previsão não aparece.
+- [x] CA9. Na tela de ontem, a previsão não aparece.
+- [x] CA10. A linha cabe em 390×800, nos temas claro e escuro, sem rolagem horizontal.
 
 ## Fora do escopo
 
@@ -49,11 +49,11 @@ Durante o dia, a tela Hoje mostra quanto falta para a meta, mas não **a que hor
 - Constantes no mesmo arquivo: `LUNCH_MINUTES = 60`, `LONG_BREAK_MINUTES = 45`, `LUNCH_LATEST_START = '14:00'`, `LUNCH_FIRST_ENTRY_BEFORE = '12:00'`.
 - Para "Meta fechada às", percorre os intervalos em ordem e acha o minuto em que a soma chega à meta.
 - `TodayScreen` mostra a linha entre o resumo e a linha de metas, só quando `isToday`. Formatação com `formatTime`; o texto da linha sai de uma função pura em `clock.ts` (`formatForecast`), para ter teste.
-- Testes com `at()` e `iv()` de `test-helpers.ts`. A tela é conferida com o build de produção num navegador headless (390×800, claro e escuro) com relógio simulado.
+- Testes com `at()` e `iv()` de `test-helpers.ts`. A tela é conferida com o build de produção num navegador headless (390×800, claro e escuro) com relógio simulado. Na entrega, um roteiro Playwright (fuso America/Sao_Paulo) entrou às 08:32 e conferiu "Saída prevista 17:32 · com 1:00 de almoço" às 09:00, "· se voltar até 13:32" depois de sair às 12:32, nenhuma linha na tela de ontem e largura de 390 px. O intervalo aberto entra na previsão mesmo quando é de outra semana, para ela sumir em dia irregular.
 
 ## Tarefas
 
-- [ ] T1. `lib/forecast.ts` + testes (CA1–CA8 na lógica).
-- [ ] T2. `formatForecast` em `clock.ts` + teste.
-- [ ] T3. Linha na `TodayScreen` e estilo (CA9, CA10); conferência headless.
-- [ ] T4. Atualizar PRODUCT.md, AGENTS.md (estrutura de `lib/`) e o índice de specs.
+- [x] T1. `lib/forecast.ts` + testes (CA1–CA8 na lógica).
+- [x] T2. `formatForecast` em `clock.ts` + teste.
+- [x] T3. Linha na `TodayScreen` e estilo (CA9, CA10); conferência headless.
+- [x] T4. Atualizar PRODUCT.md, AGENTS.md (estrutura de `lib/`) e o índice de specs.
