@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { formatDevOpsRefs, isDevOpsId, normalizeProject, parseDevOpsId, withDevOpsDefaults } from './devops'
+import {
+  digitsOnly,
+  formatDevOpsRefs,
+  isDevOpsId,
+  normalizeNote,
+  normalizeProject,
+  parseDevOpsId,
+  withDevOpsDefaults,
+} from './devops'
 import { at } from './test-helpers'
 
 describe('parseDevOpsId', () => {
@@ -100,5 +108,28 @@ describe('withDevOpsDefaults e projeto (spec 007)', () => {
     expect(withDevOpsDefaults({ ...base, project: ' Equipe IA ' }).project).toBe('Equipe IA')
     expect(withDevOpsDefaults({ ...base, project: 'x'.repeat(20) }).project).toBe('x'.repeat(15))
     expect(withDevOpsDefaults({ ...base, project: 42 }).project).toBe('')
+  })
+})
+
+describe('digitsOnly (spec 012)', () => {
+  it('CA5: tira o que não é dígito e corta em 10', () => {
+    expect(digitsOnly('#123 567a')).toBe('123567')
+    expect(digitsOnly('abc')).toBe('')
+    expect(digitsOnly('12345678901')).toBe('1234567890')
+    expect(digitsOnly('')).toBe('')
+  })
+})
+
+describe('normalizeNote (spec 012)', () => {
+  it('aceita até 200 caracteres sem contar os espaços nas pontas', () => {
+    expect(normalizeNote(`  ${'a'.repeat(200)}  `)).toEqual({ ok: true, value: 'a'.repeat(200) })
+    expect(normalizeNote('a'.repeat(201))).toEqual({ ok: false })
+  })
+
+  it('uma observação antiga maior que não mudou continua valendo', () => {
+    const old = 'a'.repeat(250)
+    expect(normalizeNote(old, old)).toEqual({ ok: true, value: old })
+    expect(normalizeNote(` ${old} `, old)).toEqual({ ok: true, value: old })
+    expect(normalizeNote(`${old}b`, old)).toEqual({ ok: false })
   })
 })

@@ -22,8 +22,8 @@ Uso pessoal de um profissional PJ, sem controle formal da empresa. O app serve p
 
 - Botão Entrar/Sair grava o **minuto exato**. Nada é arredondado automaticamente.
 - Intervalos podem ser adicionados, editados e apagados livremente.
-- Cada intervalo tem uma **observação** opcional.
-- Cada intervalo pode ter o **work item** do Azure DevOps e a **task** filha onde as horas são declaradas (ids, opcionais), um **projeto** (texto de até 15 caracteres, opcional) e a marca **Declarado** (padrão: não), que diz se as horas já foram lançadas no Azure DevOps. Ex.: `09:00–09:30 Daily equipe IA · WI 123567 · Task 123568 · Declarado`.
+- Cada intervalo tem uma **observação** opcional, de até 200 caracteres. Observações antigas maiores continuam inteiras; só uma observação alterada precisa caber no limite (spec 012).
+- Cada intervalo pode ter o **work item** do Azure DevOps e a **task** filha onde as horas são declaradas (ids, opcionais, só números de até 10 dígitos), um **projeto** (texto de até 15 caracteres, opcional) e a marca **Declarado** (padrão: não), que diz se as horas já foram lançadas no Azure DevOps. Ex.: `09:00–09:30 Daily equipe IA · WI 123567 · Task 123568 · Declarado`.
 - Nada é apagado automaticamente.
 
 ## Telas
@@ -32,7 +32,7 @@ Uso pessoal de um profissional PJ, sem controle formal da empresa. O app serve p
 - **Semana**: uma linha por dia com trabalhado, meta e alerta de irregularidade; totais; setas ‹ › para trocar de semana e calendário no título para pular para a semana de qualquer data.
 - **Período 26–25**: totais e semanas, com exportação; setas e calendário no título para trocar de período.
 - **Semana** também exporta os seus dias, porque a planilha é preenchida por semana.
-- **Dados**: baixar backup em JSON (`ponto-backup-AAAA-MM-DD.json`, com intervalos, dias sem meta e configurações), restaurar um backup (mostra um resumo e pede confirmação antes de substituir tudo) e ver se o navegador prometeu não apagar os dados. O backup serve para trocar de aparelho e para levar dados entre produção e homologação. Só na homologação, a aba também tem o **modo demo**, que mostra o app com uma semana e meia de dados fictícios num banco separado, sem tocar nos dados reais (spec 010).
+- **Dados**: escolher o tema (Sistema, Claro ou Escuro; vale só no aparelho; spec 012), baixar backup em JSON (`ponto-backup-AAAA-MM-DD.json`, com intervalos, dias sem meta e configurações), restaurar um backup (mostra um resumo e pede confirmação antes de substituir tudo) e ver se o navegador prometeu não apagar os dados. O backup serve para trocar de aparelho e para levar dados entre produção e homologação. Só na homologação, a aba também tem o **modo demo**, que mostra o app com uma semana e meia de dados fictícios num banco separado, sem tocar nos dados reais (spec 010).
 
 ## Dias irregulares
 

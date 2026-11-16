@@ -1,9 +1,9 @@
 import { differenceInSeconds, format, getISODay, parseISO } from 'date-fns'
-import { devOpsIdToText, normalizeProject, parseDevOpsId } from './devops'
+import { devOpsIdToText, normalizeNote, normalizeProject, parseDevOpsId } from './devops'
 import { formatDuration } from './duration'
 import type { DayForecast } from './forecast'
 import { dayKey, parseDayKey } from './time'
-import { PROJECT_MAX_LENGTH, type DayRange, type Interval } from './types'
+import { DEVOPS_ID_MAX_DIGITS, NOTE_MAX_LENGTH, PROJECT_MAX_LENGTH, type DayRange, type Interval } from './types'
 
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
 const MONTHS = [
@@ -113,8 +113,11 @@ export type IntervalFormResult =
     }
   | { ok: false; error: string }
 
-/** Lê o formulário de intervalo. Não arredonda nada: grava o minuto digitado. */
-export function readIntervalForm(form: IntervalForm): IntervalFormResult {
+/**
+ * Lê o formulário de intervalo. Não arredonda nada: grava o minuto digitado. `originalNote` é a
+ * observação do intervalo editado: se ela não mudou, pode passar do limite (spec 012).
+ */
+export function readIntervalForm(form: IntervalForm, originalNote = ''): IntervalFormResult {
   const start = parseTimeInput(form.day, form.start)
   if (!start) return { ok: false, error: 'Informe a hora de início.' }
   let end: Date | null = null
@@ -123,17 +126,23 @@ export function readIntervalForm(form: IntervalForm): IntervalFormResult {
     if (!end) return { ok: false, error: 'Hora de fim inválida.' }
     if (end < start) return { ok: false, error: 'O fim não pode ser antes do início.' }
   }
+  const note = normalizeNote(form.note, originalNote)
+  if (!note.ok) return { ok: false, error: `A observação deve ter no máximo ${NOTE_MAX_LENGTH} caracteres.` }
   const workItem = parseDevOpsId(form.workItem)
-  if (!workItem.ok) return { ok: false, error: 'O work item deve ser um número, ex.: 123567.' }
+  if (!workItem.ok) {
+    return { ok: false, error: `O work item deve ser um número de até ${DEVOPS_ID_MAX_DIGITS} dígitos, ex.: 123567.` }
+  }
   const task = parseDevOpsId(form.task)
-  if (!task.ok) return { ok: false, error: 'A task deve ser um número, ex.: 123568.' }
+  if (!task.ok) {
+    return { ok: false, error: `A task deve ser um número de até ${DEVOPS_ID_MAX_DIGITS} dígitos, ex.: 123568.` }
+  }
   const project = normalizeProject(form.project)
   if (!project.ok) return { ok: false, error: `O projeto deve ter no máximo ${PROJECT_MAX_LENGTH} caracteres.` }
   return {
     ok: true,
     start,
     end,
-    note: form.note.trim(),
+    note: note.value,
     workItemId: workItem.value,
     taskId: task.value,
     declared: form.declared,

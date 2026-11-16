@@ -139,6 +139,11 @@ Spec 010. Na homologação, a aba Dados liga um modo demo que preenche a semana 
   - A versão do formato do backup é independente da versão do schema do Dexie.
   - A data do último backup baixado fica no `localStorage` (`ponto:lastBackupAt` ou `ponto-hml:lastBackupAt`), por `src/features/shared/lastBackup.ts`. É só uma informação do aparelho, fora do banco.
   - Restaurar sempre substitui tudo; não há mesclagem.
+  - Observações de qualquer tamanho são aceitas na restauração e na sincronização; o limite de 200 caracteres (spec 012) vale só para observações novas ou alteradas, no formulário e no repositório.
+
+## Tema
+
+O app segue o tema do sistema (`prefers-color-scheme`), a não ser que o usuário fixe Claro ou Escuro na aba Dados (spec 012). A escolha fica no `localStorage` (`ponto-theme`, a mesma chave em produção e homologação), fora do banco, do backup e da sincronização. Um script pequeno no `index.html` põe `data-theme` no `<html>` antes do primeiro quadro; `src/index.css` aplica as cores escuras em `:root[data-theme='dark']` ou pelo sistema quando não há `data-theme='light'`. A lógica pura fica em `src/lib/theme.ts`, e ler, gravar e aplicar, em `src/features/shared/theme.ts`.
 
 ## Exportação
 

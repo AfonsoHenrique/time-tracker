@@ -2,7 +2,7 @@ import Dexie from 'dexie'
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { buildBackup, parseBackup } from '../lib/backup'
-import { at } from '../lib/test-helpers'
+import { at, iv } from '../lib/test-helpers'
 import { DEFAULT_SETTINGS } from '../lib/types'
 import { createRepository, RepositoryError, type Repository } from './repository'
 import { PontoDb } from './schema'
@@ -210,6 +210,25 @@ describe('campos do Azure DevOps (spec 005)', () => {
     await expectCode(repo.createInterval({ start: '2026-11-09T09:00', taskId: 1.5 }), 'invalid-interval')
     const { id } = await repo.createInterval({ start: '2026-11-09T09:00', end: '2026-11-09T09:30' })
     await expectCode(repo.updateInterval(id, { taskId: -2 }), 'invalid-interval')
+  })
+
+  it('spec 012 CA2: observação nova acima de 200 caracteres falha com invalid-interval', async () => {
+    await expectCode(repo.createInterval({ start: '2026-11-09T09:00', note: 'a'.repeat(201) }), 'invalid-interval')
+    const { id } = await repo.createInterval({ start: '2026-11-09T09:00', end: '2026-11-09T09:30', note: ` ${'a'.repeat(200)} ` })
+    await expectCode(repo.updateInterval(id, { note: 'b'.repeat(201) }), 'invalid-interval')
+    expect((await repo.updateInterval(id, { note: 'b'.repeat(200) })).note).toBe('b'.repeat(200))
+  })
+
+  it('spec 012 CA3: observação antiga maior que 200 continua ao editar outros campos', async () => {
+    const old = 'c'.repeat(250)
+    await repo.replaceAll({
+      intervals: [{ ...iv('2026-11-09 09:00', '2026-11-09 10:00', old), id: 'antigo' }],
+      daysOff: [],
+      settings: { ...DEFAULT_SETTINGS, workDays: [...DEFAULT_SETTINGS.workDays] },
+    })
+    const updated = await repo.updateInterval('antigo', { end: '2026-11-09T11:00', note: old })
+    expect(updated.note).toBe(old)
+    await expectCode(repo.updateInterval('antigo', { note: `${old}d` }), 'invalid-interval')
   })
 
   it('CA4: abrir um banco da versão 1 completa os intervalos que já existiam', async () => {

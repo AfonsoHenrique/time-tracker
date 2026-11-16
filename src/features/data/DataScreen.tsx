@@ -12,7 +12,9 @@ import {
   type BackupSummary,
 } from '../../lib/backup'
 import { APP_ENV, IS_DEMO, type AppEnv } from '../../lib/env'
+import { THEME_CHOICES, THEME_LABELS, type ThemeChoice } from '../../lib/theme'
 import { readLastBackup, saveLastBackup } from '../shared/lastBackup'
+import { applyTheme, readThemeChoice, saveThemeChoice } from '../shared/theme'
 import { useNow } from '../shared/useNow'
 import './data.css'
 
@@ -26,11 +28,12 @@ const DemoSection = import.meta.env.VITE_APP_ENV === 'hml' ? lazy(() => import('
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
-/** Aba Dados: baixar backup, restaurar um backup e ver o armazenamento do navegador. */
+/** Aba Dados: tema, baixar backup, restaurar um backup e ver o armazenamento do navegador. */
 export function DataScreen() {
   return (
     <main className="app data">
       <h1 className="data-title">Dados</h1>
+      <AppearanceSection />
       <BackupSection />
       <RestoreSection />
       <StorageSection />
@@ -40,6 +43,38 @@ export function DataScreen() {
         </Suspense>
       )}
     </main>
+  )
+}
+
+/** Tema do app neste aparelho (spec 012): segue o sistema ou fica fixo em claro ou escuro. */
+function AppearanceSection() {
+  const [choice, setChoice] = useState<ThemeChoice>(readThemeChoice)
+
+  const pick = (next: ThemeChoice) => {
+    setChoice(next)
+    saveThemeChoice(next)
+    applyTheme(next)
+  }
+
+  return (
+    <section className="data-block" aria-labelledby="appearance-title">
+      <h2 id="appearance-title">Aparência</h2>
+      <p className="muted">Vale só neste aparelho. Em Sistema, o app acompanha o tema claro ou escuro do aparelho.</p>
+      <div className="theme-options" role="radiogroup" aria-labelledby="appearance-title">
+        {THEME_CHOICES.map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={choice === option}
+            className="button theme-option"
+            onClick={() => pick(option)}
+          >
+            {THEME_LABELS[option]}
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }
 

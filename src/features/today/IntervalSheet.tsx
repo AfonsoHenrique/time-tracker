@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { formatShortDay, intervalToForm, readIntervalForm, type IntervalForm } from '../../lib/clock'
-import { PROJECT_MAX_LENGTH, type Interval } from '../../lib/types'
+import { digitsOnly } from '../../lib/devops'
+import { DEVOPS_ID_MAX_DIGITS, NOTE_MAX_LENGTH, PROJECT_MAX_LENGTH, type Interval } from '../../lib/types'
 import { errorMessage } from '../shared/errors'
 
 export interface IntervalValues {
@@ -55,7 +56,7 @@ export function IntervalSheet({ day, interval, onSave, onDelete, onClose }: Prop
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    const result = readIntervalForm(form)
+    const result = readIntervalForm(form, interval?.note)
     if (!result.ok) {
       setError(result.error)
       return
@@ -64,6 +65,8 @@ export function IntervalSheet({ day, interval, onSave, onDelete, onClose }: Prop
   }
 
   const endsOtherDay = form.endDay !== form.day
+  const noteLength = form.note.trim().length
+  const noteTooLong = noteLength > NOTE_MAX_LENGTH
 
   return (
     <dialog ref={dialogRef} className="sheet" onClose={onClose} aria-labelledby="sheet-title">
@@ -88,9 +91,15 @@ export function IntervalSheet({ day, interval, onSave, onDelete, onClose }: Prop
         <p className="sheet-hint">Deixe o fim vazio se o intervalo ainda está em andamento.</p>
 
         <label>
-          Observação
+          <span>
+            Observação{' '}
+            <span className={noteTooLong ? 'sheet-count-over' : 'muted'}>
+              ({noteLength}/{NOTE_MAX_LENGTH})
+            </span>
+          </span>
           <input
             type="text"
+            maxLength={NOTE_MAX_LENGTH}
             value={form.note}
             placeholder="Opcional"
             onChange={(e) => update({ note: e.target.value })}
@@ -122,9 +131,10 @@ export function IntervalSheet({ day, interval, onSave, onDelete, onClose }: Prop
                 type="text"
                 inputMode="numeric"
                 autoComplete="off"
+                maxLength={DEVOPS_ID_MAX_DIGITS}
                 value={form.workItem}
                 placeholder="Opcional"
-                onChange={(e) => update({ workItem: e.target.value })}
+                onChange={(e) => update({ workItem: digitsOnly(e.target.value) })}
               />
             </label>
             <label>
@@ -133,13 +143,14 @@ export function IntervalSheet({ day, interval, onSave, onDelete, onClose }: Prop
                 type="text"
                 inputMode="numeric"
                 autoComplete="off"
+                maxLength={DEVOPS_ID_MAX_DIGITS}
                 value={form.task}
                 placeholder="Opcional"
-                onChange={(e) => update({ task: e.target.value })}
+                onChange={(e) => update({ task: digitsOnly(e.target.value) })}
               />
             </label>
           </div>
-          <p className="sheet-hint">A task é a filha do work item onde as horas são declaradas.</p>
+          <p className="sheet-hint">Só números, até {DEVOPS_ID_MAX_DIGITS} dígitos. A task é a filha do work item onde as horas são declaradas.</p>
           <label className="sheet-check">
             <input
               type="checkbox"

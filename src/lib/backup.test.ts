@@ -130,6 +130,13 @@ describe('buildBackup e parseBackup', () => {
     expect(withProject(42)).toEqual({ ok: false, error: 'Intervalo 2 com projeto inválido.' })
   })
 
+  it('spec 012 CA4: restaura observação longa inteira, sem cortar', () => {
+    const base = buildBackup(sampleData(), now, 'prod')
+    const note = 'x'.repeat(500)
+    const result = parseBackup(text({ ...base, intervals: [{ ...base.intervals[0], note }] }))
+    expect(result.ok && result.data.intervals[0].note).toBe(note)
+  })
+
   it('normaliza instantes para UTC no minuto', () => {
     const base = buildBackup(sampleData(), now, 'prod')
     const result = parseBackup(text({ ...base, intervals: [{ ...base.intervals[0], start: '2026-11-09T08:00:59-03:00', end: '2026-11-09T12:00:00Z' }] }))
