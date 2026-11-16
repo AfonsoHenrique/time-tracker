@@ -1,4 +1,4 @@
-import { EMPTY_DEVOPS_FIELDS, PROJECT_MAX_LENGTH, type Interval } from './types'
+import { DEVOPS_ID_MAX_DIGITS, EMPTY_DEVOPS_FIELDS, NOTE_MAX_LENGTH, PROJECT_MAX_LENGTH, type Interval } from './types'
 
 /** Maior id aceito: os ids de work item do Azure DevOps são inteiros de 32 bits. */
 const MAX_ID = 2_147_483_647
@@ -20,6 +20,24 @@ export function parseDevOpsId(text: string): DevOpsIdInput {
   if (!/^\d+$/.test(trimmed)) return { ok: false }
   const value = Number(trimmed)
   return isDevOpsId(value) ? { ok: true, value } : { ok: false }
+}
+
+/**
+ * O que o campo de id deixa ficar enquanto se digita ou cola: só dígitos, até
+ * `DEVOPS_ID_MAX_DIGITS`. Ex.: `#123 567a` vira `123567`.
+ */
+export function digitsOnly(text: string): string {
+  return text.replace(/\D/g, '').slice(0, DEVOPS_ID_MAX_DIGITS)
+}
+
+/**
+ * Observação sem espaços nas pontas. Só uma observação diferente de `original` precisa caber em
+ * `NOTE_MAX_LENGTH`: uma antiga maior continua valendo enquanto não for alterada (spec 012).
+ */
+export function normalizeNote(text: string, original = ''): { ok: true; value: string } | { ok: false } {
+  const value = text.trim()
+  if (value.length <= NOTE_MAX_LENGTH || value === original.trim()) return { ok: true, value }
+  return { ok: false }
 }
 
 /** Id para mostrar num campo de texto: vazio quando não há. */

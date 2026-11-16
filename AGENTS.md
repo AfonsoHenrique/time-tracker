@@ -44,12 +44,13 @@ src/
     forecast.ts     # previsão do horário de saída do dia (com reserva de almoço)
     route.ts        # rota no hash da URL (#/hoje/…, #/semana/…, #/periodo/…, #/dados)
     export.ts       # linhas da planilha HORAS.xlsx, TSV e CSV
-    devops.ts       # ids de work item/task, projeto e padrões para dados antigos
+    devops.ts       # ids de work item/task, projeto, observação e padrões para dados antigos
     settings.ts     # validação das configurações (repositório e backup)
     backup.ts       # arquivo de backup: montar, validar, resumo e aviso de backup
     demo.ts         # dados fictícios do modo demo da homologação
     env.ts          # ambiente (IS_HML, IS_DEMO) e nome do banco
     sync.ts         # chaves, conflito (última gravação vence) e plano do primeiro login
+    theme.ts        # escolha de tema (Sistema, Claro, Escuro) e chave do localStorage
     test-helpers.ts # at() e iv() para montar instantes e intervalos nos testes
     *.test.ts       # testes ao lado do código
   db/
@@ -58,11 +59,11 @@ src/
     demo.ts         # liga, recria e desliga o modo demo (banco separado)
   sync/             # engine (ciclo enviar/receber, primeiro login), autoSync (gatilhos), firestoreRemote, memoryRemote
   features/
-    shared/         # useRangeData (semana ou período), useNow, useRoute, ExportPanel, errors, lastBackup
+    shared/         # useRangeData (semana ou período), useNow, useRoute, ExportPanel, errors, lastBackup, theme
     today/          # tela Hoje: TodayScreen, IntervalSheet
     week/           # tela Semana: WeekScreen
     period/         # tela Período: PeriodScreen
-    data/           # aba Dados: DataScreen (backup, restaurar, armazenamento) e DemoSection (só hml)
+    data/           # aba Dados: DataScreen (aparência, backup, restaurar, armazenamento) e DemoSection (só hml)
   components/       # TabBar, Stat/BalanceStat, DatePickerTitle: visuais, sem regra de negócio
 firebase/           # firestore.rules e testes nos emuladores
 docs/               # produto, arquitetura, ADRs e specs

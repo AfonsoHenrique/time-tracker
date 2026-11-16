@@ -7,6 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1f6feb" />
     <title>Ponto</title>
+    <script>
+      // Tema escolhido na aba Dados (spec 012), aplicado antes do primeiro quadro. Chave: THEME_KEY de src/lib/theme.ts.
+      try {
+        var theme = localStorage.getItem('ponto-theme')
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

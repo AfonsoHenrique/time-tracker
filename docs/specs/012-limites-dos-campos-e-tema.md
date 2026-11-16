@@ -1,6 +1,6 @@
 # 012. Limites nos campos do intervalo e escolha de tema
 
-- **Status**: Rascunho
+- **Status**: Concluída
 - **Marco**: 5.3
 - **Relacionado**: [005-azure-devops-no-intervalo](005-azure-devops-no-intervalo.md), [006-backup-e-persistencia](006-backup-e-persistencia.md), [007-projeto-e-work-item-na-exportacao](007-projeto-e-work-item-na-exportacao.md), [008-login-e-sincronizacao](008-login-e-sincronizacao.md)
 
@@ -39,16 +39,16 @@ O app também só segue o tema do sistema. Dá para querer o tema escuro no celu
 
 ## Critérios de aceite
 
-- [ ] CA1. Dado a folha de um intervalo novo, quando digito 200 caracteres na observação, então o contador mostra `200/200` e o 201º não entra.
-- [ ] CA2. Dado o repositório, quando crio ou edito um intervalo com observação de 201 caracteres (sem contar espaços nas pontas), então ele falha com `invalid-interval`; com 200, grava.
-- [ ] CA3. Dado um intervalo gravado com observação de 250 caracteres, quando abro a folha, então vejo o texto inteiro e o contador `250/200` em vermelho; quando mudo só o fim e salvo, então grava e a observação continua com 250. Quando mudo a observação e ela ainda tem mais de 200, então o salvar mostra "A observação deve ter no máximo 200 caracteres.".
-- [ ] CA4. Dado um backup com uma observação de 500 caracteres, quando restauro, então ele abre e a observação volta inteira.
-- [ ] CA5. Dado o campo Work item, quando colo `#123 567a`, então o campo fica `123567`; quando digito o 11º dígito, então ele não entra.
-- [ ] CA6. Dado o Work item `9999999999` ou `0`, quando salvo, então aparece "O work item deve ser um número de até 10 dígitos, ex.: 123567."; com `2147483647`, grava. O mesmo para a Task.
-- [ ] CA7. Dado o sistema no tema claro, quando escolho **Escuro** na aba Dados, então o app inteiro fica escuro na hora; quando recarrego, então abre escuro já no primeiro quadro.
-- [ ] CA8. Dado **Sistema** escolhido, quando o sistema troca de claro para escuro, então o app troca junto, sem recarregar.
-- [ ] CA9. Dado o sistema no escuro e **Claro** escolhido, então as telas, a folha do intervalo e o seletor de hora ficam claros.
-- [ ] CA10. Em 390×800, nos temas claro e escuro, a seção Aparência e a folha com os contadores cabem sem quebrar o layout nem rolar na horizontal.
+- [x] CA1. Dado a folha de um intervalo novo, quando digito 200 caracteres na observação, então o contador mostra `200/200` e o 201º não entra.
+- [x] CA2. Dado o repositório, quando crio ou edito um intervalo com observação de 201 caracteres (sem contar espaços nas pontas), então ele falha com `invalid-interval`; com 200, grava.
+- [x] CA3. Dado um intervalo gravado com observação de 250 caracteres, quando abro a folha, então vejo o texto inteiro e o contador `250/200` em vermelho; quando mudo só o fim e salvo, então grava e a observação continua com 250. Quando mudo a observação e ela ainda tem mais de 200, então o salvar mostra "A observação deve ter no máximo 200 caracteres.".
+- [x] CA4. Dado um backup com uma observação de 500 caracteres, quando restauro, então ele abre e a observação volta inteira.
+- [x] CA5. Dado o campo Work item, quando colo `#123 567a`, então o campo fica `123567`; quando digito o 11º dígito, então ele não entra.
+- [x] CA6. Dado o Work item `9999999999` ou `0`, quando salvo, então aparece "O work item deve ser um número de até 10 dígitos, ex.: 123567."; com `2147483647`, grava. O mesmo para a Task.
+- [x] CA7. Dado o sistema no tema claro, quando escolho **Escuro** na aba Dados, então o app inteiro fica escuro na hora; quando recarrego, então abre escuro já no primeiro quadro.
+- [x] CA8. Dado **Sistema** escolhido, quando o sistema troca de claro para escuro, então o app troca junto, sem recarregar.
+- [x] CA9. Dado o sistema no escuro e **Claro** escolhido, então as telas, a folha do intervalo e o seletor de hora ficam claros.
+- [x] CA10. Em 390×800, nos temas claro e escuro, a seção Aparência e a folha com os contadores cabem sem quebrar o layout nem rolar na horizontal.
 
 ## Fora do escopo
 
@@ -79,12 +79,13 @@ O app também só segue o tema do sistema. Dá para querer o tema escuro no celu
 - `src/index.css`: as cores escuras passam a valer em `:root[data-theme='dark']` e em `@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) }`. `color-scheme` vira `light` ou `dark` quando há escolha fixa e continua `light dark` em Sistema.
 - `DataScreen`: seção `AppearanceSection` com três botões (`role="radiogroup"`, `aria-checked`), no topo da aba.
 - Sem mudança no repositório nem no banco: o tema não é dado do app.
+- Na entrega, os critérios de tela foram conferidos com Playwright no build de produção (390×800, sistema claro e escuro): o tema fixo vence o do sistema, Sistema acompanha a troca sem recarregar, a escolha volta ao recarregar, a observação para em 200, os ids ficam só com dígitos (até 10) e a largura da página ficou em 390 px. O caso da observação antiga (CA3) e o do backup (CA4) são testes de unidade e do repositório.
 
 ## Tarefas
 
-- [ ] T1. Constantes, `digitsOnly` e testes (CA5, CA6).
-- [ ] T2. Limite da observação em `readIntervalForm` e no repositório, com o caso da observação antiga (CA2, CA3), e teste do backup com observação longa (CA4).
-- [ ] T3. Contadores e filtros na folha do intervalo (CA1, CA3, CA5).
-- [ ] T4. `theme.ts` (lib e shared), script no `index.html`, CSS por `data-theme` e seção Aparência (CA7–CA9).
-- [ ] T5. Conferência headless em 390×800, claro e escuro, com o sistema nos dois temas (CA10).
-- [ ] T6. Atualizar PRODUCT.md, ARCHITECTURE.md (se citar o tema), AGENTS.md (estrutura) e o índice de specs.
+- [x] T1. Constantes, `digitsOnly` e testes (CA5, CA6).
+- [x] T2. Limite da observação em `readIntervalForm` e no repositório, com o caso da observação antiga (CA2, CA3), e teste do backup com observação longa (CA4).
+- [x] T3. Contadores e filtros na folha do intervalo (CA1, CA3, CA5).
+- [x] T4. `theme.ts` (lib e shared), script no `index.html`, CSS por `data-theme` e seção Aparência (CA7–CA9).
+- [x] T5. Conferência headless em 390×800, claro e escuro, com o sistema nos dois temas (CA10).
+- [x] T6. Atualizar PRODUCT.md, ARCHITECTURE.md (se citar o tema), AGENTS.md (estrutura) e o índice de specs.

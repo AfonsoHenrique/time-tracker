@@ -21,6 +21,23 @@
   font-size: 0.9rem;
 }
 
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.theme-option {
+  padding: 8px;
+}
+
+.theme-option[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
 .data-last {
   font-weight: 600;
 }

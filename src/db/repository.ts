@@ -1,10 +1,10 @@
 import { parseISO, startOfMinute } from 'date-fns'
 import { parseDayOffRecord, parseIntervalRecord, parseSettingsRecord, type BackupData } from '../lib/backup'
-import { isDevOpsId, normalizeProject } from '../lib/devops'
+import { isDevOpsId, normalizeNote, normalizeProject } from '../lib/devops'
 import { settingsProblem } from '../lib/settings'
 import { isNewer, parseRecordKey, recordKey, SETTINGS_DOC_ID, type SyncDoc } from '../lib/sync'
 import { dayEndInstant, dayStartInstant, isDayKey } from '../lib/time'
-import { DEFAULT_SETTINGS, PROJECT_MAX_LENGTH, type DayOff, type Interval, type Settings } from '../lib/types'
+import { DEFAULT_SETTINGS, NOTE_MAX_LENGTH, PROJECT_MAX_LENGTH, type DayOff, type Interval, type Settings } from '../lib/types'
 import { PontoDb, SETTINGS_ID, SYNC_STATE_ID, type DayOffRow, type SyncStateRow } from './schema'
 
 export type RepositoryErrorCode =
@@ -80,6 +80,18 @@ function project(value: string | undefined): string {
     throw new RepositoryError('invalid-interval', `O projeto deve ter no máximo ${PROJECT_MAX_LENGTH} caracteres.`)
   }
   return result.value
+}
+
+/**
+ * Confere a observação de um intervalo. Uma igual à `current` (sem contar espaços nas pontas)
+ * passa mesmo acima do limite: é uma observação antiga que não foi alterada (spec 012).
+ */
+function note(value: string | undefined, current = ''): string {
+  const text = value ?? ''
+  if (!normalizeNote(text, current).ok) {
+    throw new RepositoryError('invalid-interval', `A observação deve ter no máximo ${NOTE_MAX_LENGTH} caracteres.`)
+  }
+  return text
 }
 
 function assertDayKey(date: string) {
@@ -165,7 +177,7 @@ export function createRepository(db: PontoDb) {
       id: crypto.randomUUID(),
       start,
       end,
-      note: input.note ?? '',
+      note: note(input.note),
       workItemId: devOpsId(input.workItemId, 'O work item'),
       taskId: devOpsId(input.taskId, 'A task'),
       declared: input.declared ?? false,
@@ -221,7 +233,7 @@ export function createRepository(db: PontoDb) {
           ...current,
           start,
           end,
-          note: patch.note ?? current.note,
+          note: patch.note === undefined ? current.note : note(patch.note, current.note),
           workItemId: patch.workItemId === undefined ? current.workItemId : devOpsId(patch.workItemId, 'O work item'),
           taskId: patch.taskId === undefined ? current.taskId : devOpsId(patch.taskId, 'A task'),
           declared: patch.declared ?? current.declared,
