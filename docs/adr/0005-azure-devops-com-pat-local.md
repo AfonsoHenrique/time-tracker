@@ -15,7 +15,7 @@ A API REST do Azure DevOps aceita chamadas direto do navegador: responde ao `OPT
 
 Autenticar com um **token de acesso pessoal (PAT)** que o usuário gera no Azure DevOps, só com o escopo **Work Items (Read & write)**, e cola na aba Dados.
 
-- O PAT e a organização ficam no `localStorage` do aparelho, com a chave do ambiente. Não vão para o IndexedDB sincronizado, para o Firestore nem para o backup.
+- O PAT, a organização, o projeto e o mapeamento de campos ficam no `localStorage` do aparelho, com a chave do ambiente. Não vão para o IndexedDB sincronizado, para o Firestore nem para o backup.
 - O app chama `dev.azure.com` direto do navegador, sem servidor no meio.
 - Cada aparelho configura o seu token.
 
@@ -30,4 +30,4 @@ Autenticar com um **token de acesso pessoal (PAT)** que o usuário gera no Azure
 - O PAT fica legível por qualquer script que rode na origem `afonsohenrique.github.io`. O app não carrega scripts de terceiros, e o escopo mínimo limita o estrago a work items.
 - O PAT expira (no máximo um ano, e a organização pode exigir menos). O app trata 401/403 e pede um token novo.
 - A organização pode proibir PAT por política. Nesse caso o lançamento não funciona e a saída é a alternativa do Entra ID, num ADR novo.
-- Se o app fechar entre atualizar a task e marcar os intervalos como declarados, um novo lançamento somaria de novo. O comentário no histórico da task registra cada lançamento para conferir.
+- Os campos criados pela organização (Tipo de atividade, Detalhes do apontamento) têm nomes internos diferentes em cada organização. O mapeamento é escolhido na aba Dados e fica no aparelho, junto com o token.
