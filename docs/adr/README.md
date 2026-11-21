@@ -10,3 +10,4 @@ Nome: `NNNN-titulo-curto.md`. Status: Proposto, Aceito ou Substituído.
 | [0002](0002-github-pages-com-homologacao.md) | GitHub Pages com homologação em `/hml/` | Aceito |
 | [0003](0003-firebase-na-fase-2.md) | Firebase para sincronização e login na fase 2 | Substituído por 0004 |
 | [0004](0004-sincronizacao-dexie-firestore.md) | Sincronização: Dexie local com Firestore, login Microsoft e Google | Aceito |
+| [0005](0005-azure-devops-com-pat-local.md) | Azure DevOps com token de acesso pessoal guardado no aparelho | Proposto |
