@@ -104,9 +104,12 @@ O Dexie continua sendo a fonte da verdade no aparelho. A nuvem é atualizada em 
 - `src/sync/autoSync.ts`: gatilhos (ao começar, ao voltar para o primeiro plano, quando a rede volta, 3 s depois de gravar e a cada minuto com o app visível).
 - `src/sync/firestoreRemote.ts`: Firestore lite em `users/{uid}/envs/{prod|hml}/{intervals|daysOff|meta}/{id}`. Cada documento é `{ data, updatedAt, deletedAt, syncedAt }`; `syncedAt` é a hora do servidor e serve de cursor (relido com 2 minutos de folga). Só grava um documento mais novo que o da nuvem, numa transação.
 - `src/sync/memoryRemote.ts`: a mesma nuvem em memória, para os testes.
+- `src/sync/firebase.ts`: Firebase Auth (Google e Microsoft por popup, vínculo com `linkWithPopup`, sessão em `indexedDBLocalPersistence`) e Firestore lite. Um app Firebase por ambiente (`ponto-prod`, `ponto-hml`), porque a sessão é guardada pelo nome do app e os dois ambientes estão na mesma origem. A configuração pública fica em `src/lib/firebaseConfig.ts`. Este módulo só é carregado com `import()`: ao abrir o app quando o aparelho já está ligado a uma conta, ou na aba Dados antes do clique em Entrar (o navegador só abre a janela de login logo depois do toque).
+- `src/sync/session.ts`: estado da conta (`off`, `loading`, `expired`, `choosing`, `linked`), primeiro login, vínculo, sair e o estado da sincronização para a tela. `main.tsx` chama `init()`; as telas leem com `useAccount` (`src/features/shared/`). Textos de erro e de estado são puros em `src/lib/account.ts`.
+- No modo demo da homologação a sincronização fica desligada.
 - Restaurar um backup com a sincronização ligada dá `updatedAt` de agora a tudo e marca o que sumiu, para o backup vencer também na nuvem.
 
-Regras do Firestore em `firebase/firestore.rules`: cada usuário só lê e grava em `users/{seu uid}/…`, os documentos são validados como no repositório, uma versão mais antiga não substitui a mais nova e apagar de verdade é proibido. `npm run test:rules` roda os testes das regras e a sincronização de ponta a ponta nos emuladores do Firebase (precisa de Java 21); o CI roda o mesmo num job separado. O deploy das regras é manual (`npx firebase-tools deploy --only firestore:rules`).
+Regras do Firestore em `firebase/firestore.rules`: cada usuário só lê e grava em `users/{seu uid}/…`, os documentos são validados como no repositório, uma versão mais antiga não substitui a mais nova e apagar de verdade é proibido. `npm run test:rules` roda os testes das regras e a sincronização de ponta a ponta nos emuladores do Firebase (precisa de Java 21); o CI roda o mesmo num job separado. O deploy das regras é manual (`npx firebase-tools deploy --only firestore:rules`, projeto em `.firebaserc`) ou colando o arquivo no console do Firebase.
 
 ## Ambientes
 

@@ -1,8 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { getRepository } from '../../db/repository'
 import {
-  backupFileName,
-  buildBackup,
   formatBytes,
   formatDayBr,
   formatExportedAt,
@@ -11,9 +9,12 @@ import {
   type BackupData,
   type BackupSummary,
 } from '../../lib/backup'
-import { APP_ENV, IS_DEMO, type AppEnv } from '../../lib/env'
+import { APP_ENV, type AppEnv } from '../../lib/env'
 import { THEME_CHOICES, THEME_LABELS, type ThemeChoice } from '../../lib/theme'
-import { readLastBackup, saveLastBackup } from '../shared/lastBackup'
+import { readLastBackup } from '../shared/lastBackup'
+import { useAccount } from '../shared/useAccount'
+import { AccountSection } from './AccountSection'
+import { downloadBackup } from './downloadBackup'
 import { applyTheme, readThemeChoice, saveThemeChoice } from '../shared/theme'
 import { useNow } from '../shared/useNow'
 import './data.css'
@@ -28,11 +29,12 @@ const DemoSection = import.meta.env.VITE_APP_ENV === 'hml' ? lazy(() => import('
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
-/** Aba Dados: tema, baixar backup, restaurar um backup e ver o armazenamento do navegador. */
+/** Aba Dados: conta e sincronização, tema, baixar backup, restaurar um backup e ver o armazenamento do navegador. */
 export function DataScreen() {
   return (
     <main className="app data">
       <h1 className="data-title">Dados</h1>
+      <AccountSection />
       <AppearanceSection />
       <BackupSection />
       <RestoreSection />
@@ -88,18 +90,9 @@ function BackupSection() {
     setBusy(true)
     setFeedback(null)
     try {
-      const exportedAt = new Date()
-      const data = await getRepository().exportAll()
-      const json = JSON.stringify(buildBackup(data, exportedAt, APP_ENV), null, 2)
-      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
-      const link = document.createElement('a')
-      link.href = url
-      link.download = backupFileName(exportedAt, IS_DEMO)
-      link.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-      saveLastBackup(exportedAt)
+      const { exportedAt, intervals } = await downloadBackup()
       setLastBackupAt(exportedAt.toISOString())
-      setFeedback({ kind: 'ok', text: `Backup baixado com ${plural(data.intervals.length, 'intervalo', 'intervalos')}.` })
+      setFeedback({ kind: 'ok', text: `Backup baixado com ${plural(intervals, 'intervalo', 'intervalos')}.` })
     } catch (error) {
       console.error(error)
       setFeedback({ kind: 'error', text: 'Não foi possível gerar o backup. Tente de novo.' })
@@ -202,6 +195,7 @@ interface SummaryProps {
 }
 
 function RestoreSummary({ pending: { summary, current }, busy, onConfirm, onCancel }: SummaryProps) {
+  const synced = useAccount().phase === 'linked'
   const otherEnv = summary.env !== APP_ENV
   const exportedAt = formatExportedAt(summary.exportedAt)
   return (
@@ -223,6 +217,7 @@ function RestoreSummary({ pending: { summary, current }, busy, onConfirm, onCanc
       </ul>
       <p className="restore-warning">
         Os dados deste aparelho ({plural(current, 'intervalo', 'intervalos')}) serão apagados e trocados por estes.
+        {synced && ' A sincronização está ligada: a nuvem e o outro aparelho também ficam com os dados do backup.'}
       </p>
       <div className="restore-actions">
         <button type="button" className="button" onClick={onCancel} disabled={busy}>
