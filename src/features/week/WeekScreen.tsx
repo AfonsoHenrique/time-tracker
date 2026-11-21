@@ -1,4 +1,5 @@
 import { addWeeks } from 'date-fns'
+import { DatePickerTitle } from '../../components/DatePickerTitle'
 import { BalanceStat, Stat } from '../../components/Stat'
 import { summarizeWeek, type DaySummary } from '../../lib/balance'
 import { formatWeekdayShort, formatRangeTitle } from '../../lib/clock'
@@ -7,6 +8,7 @@ import { isIrregularDay } from '../../lib/irregular'
 import { dayKey, parseDayKey, weekRange } from '../../lib/time'
 import type { Interval } from '../../lib/types'
 import { useNow } from '../shared/useNow'
+import { LaunchPanel } from '../devops/LaunchPanel'
 import { ExportPanel } from '../shared/ExportPanel'
 import { useRangeData, type RangeData } from '../shared/useRangeData'
 import './week.css'
@@ -23,12 +25,10 @@ export function WeekScreen({ day: selected, onChangeWeek, onOpenDay }: Props) {
   const today = dayKey(now)
   const range = weekRange(selected ?? today)
   const isCurrent = range.start === weekRange(today).start
-  const { data } = useRangeData('week', range.start)
+  const { data, run } = useRangeData('week', range.start)
 
-  const shift = (amount: number) => {
-    const start = dayKey(addWeeks(parseDayKey(range.start), amount))
-    onChangeWeek(start === weekRange(today).start ? null : start)
-  }
+  const goTo = (start: string) => onChangeWeek(start === weekRange(today).start ? null : start)
+  const shift = (amount: number) => goTo(dayKey(addWeeks(parseDayKey(range.start), amount)))
 
   return (
     <main className="app week">
@@ -36,7 +36,11 @@ export function WeekScreen({ day: selected, onChangeWeek, onOpenDay }: Props) {
         <button type="button" className="icon-button" aria-label="Semana anterior" onClick={() => shift(-1)}>
           ‹
         </button>
-        <h1 className="day-title">{formatRangeTitle(range, now)}</h1>
+        <DatePickerTitle
+          title={formatRangeTitle(range, now)}
+          value={selected ?? today}
+          onPick={(picked) => goTo(weekRange(picked).start)}
+        />
         <button type="button" className="icon-button" aria-label="Próxima semana" onClick={() => shift(1)}>
           ›
         </button>
@@ -56,6 +60,7 @@ export function WeekScreen({ day: selected, onChangeWeek, onOpenDay }: Props) {
           now={now}
           today={today}
           onOpenDay={onOpenDay}
+          run={run}
         />
       )}
     </main>
@@ -68,9 +73,10 @@ interface WeekBodyProps {
   now: Date
   today: string
   onOpenDay: (day: string | null) => void
+  run: (action: () => Promise<unknown>) => Promise<void>
 }
 
-function WeekBody({ weekStart, data, now, today, onOpenDay }: WeekBodyProps) {
+function WeekBody({ weekStart, data, now, today, onOpenDay, run }: WeekBodyProps) {
   const week = summarizeWeek(weekStart, data.intervals, data.daysOff, data.settings, now)
   return (
     <>
@@ -95,6 +101,7 @@ function WeekBody({ weekStart, data, now, today, onOpenDay }: WeekBodyProps) {
       </section>
 
       <ExportPanel range={data.range} intervals={data.intervals} />
+      <LaunchPanel range={data.range} intervals={data.intervals} settings={data.settings} run={run} />
     </>
   )
 }

@@ -4,14 +4,14 @@ import { useRoute } from './features/shared/useRoute'
 import { PeriodScreen } from './features/period/PeriodScreen'
 import { TodayScreen } from './features/today/TodayScreen'
 import { WeekScreen } from './features/week/WeekScreen'
-import { IS_HML } from './lib/env'
+import { IS_DEMO, IS_HML } from './lib/env'
 
 function App() {
   const { route, navigate } = useRoute()
 
   return (
     <>
-      {IS_HML && <div className="env-badge">Homologação</div>}
+      {IS_HML && <div className="env-badge">{IS_DEMO ? 'Homologação · Demo' : 'Homologação'}</div>}
       {route.screen === 'today' && (
         <TodayScreen
           day={route.day}

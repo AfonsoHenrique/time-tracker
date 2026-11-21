@@ -1,4 +1,5 @@
 import { addDays, addMonths } from 'date-fns'
+import { DatePickerTitle } from '../../components/DatePickerTitle'
 import { BalanceStat, Stat } from '../../components/Stat'
 import { summarizeRange } from '../../lib/balance'
 import { formatRangeTitle, formatShortDay } from '../../lib/clock'
@@ -6,6 +7,7 @@ import { formatDuration } from '../../lib/duration'
 import { isIrregularDay } from '../../lib/irregular'
 import { dayKey, parseDayKey, periodRange, weekRange } from '../../lib/time'
 import type { DayRange } from '../../lib/types'
+import { LaunchPanel } from '../devops/LaunchPanel'
 import { ExportPanel } from '../shared/ExportPanel'
 import { useNow } from '../shared/useNow'
 import { useRangeData, type RangeData } from '../shared/useRangeData'
@@ -21,15 +23,17 @@ interface Props {
 export function PeriodScreen({ day: selected, onChangePeriod, onOpenWeek }: Props) {
   const now = useNow(1000)
   const today = dayKey(now)
-  const { data } = useRangeData('period', selected ?? today)
+  const { data, run } = useRangeData('period', selected ?? today)
   const range = data?.range
   const isCurrent = range ? today >= range.start && today <= range.end : true
 
-  const shift = (amount: number) => {
+  const goTo = (anchor: string) => {
     if (!data) return
-    const anchor = dayKey(addMonths(parseDayKey(data.range.start), amount))
     const next = periodRange(anchor, data.settings.periodStartDay)
     onChangePeriod(today >= next.start && today <= next.end ? null : anchor)
+  }
+  const shift = (amount: number) => {
+    if (data) goTo(dayKey(addMonths(parseDayKey(data.range.start), amount)))
   }
 
   return (
@@ -38,7 +42,11 @@ export function PeriodScreen({ day: selected, onChangePeriod, onOpenWeek }: Prop
         <button type="button" className="icon-button" aria-label="Período anterior" onClick={() => shift(-1)}>
           ‹
         </button>
-        <h1 className="day-title">{range ? formatRangeTitle(range, now) : ' '}</h1>
+        {range ? (
+          <DatePickerTitle title={formatRangeTitle(range, now)} value={selected ?? today} onPick={goTo} />
+        ) : (
+          <h1 className="day-title"> </h1>
+        )}
         <button type="button" className="icon-button" aria-label="Próximo período" onClick={() => shift(1)}>
           ›
         </button>
@@ -52,7 +60,7 @@ export function PeriodScreen({ day: selected, onChangePeriod, onOpenWeek }: Prop
       {data === null ? (
         <p className="muted loading">Carregando…</p>
       ) : (
-        <PeriodBody data={data} now={now} today={today} onOpenWeek={onOpenWeek} />
+        <PeriodBody data={data} now={now} today={today} onOpenWeek={onOpenWeek} run={run} />
       )}
     </main>
   )
@@ -79,9 +87,10 @@ interface BodyProps {
   now: Date
   today: string
   onOpenWeek: (weekStart: string) => void
+  run: (action: () => Promise<unknown>) => Promise<void>
 }
 
-function PeriodBody({ data, now, today, onOpenWeek }: BodyProps) {
+function PeriodBody({ data, now, today, onOpenWeek, run }: BodyProps) {
   const { range, intervals, daysOff, settings } = data
   const total = summarizeRange(range, intervals, daysOff, settings, now)
 
@@ -127,6 +136,7 @@ function PeriodBody({ data, now, today, onOpenWeek }: BodyProps) {
       </ul>
 
       <ExportPanel range={range} intervals={intervals} />
+      <LaunchPanel range={range} intervals={intervals} settings={settings} run={run} />
     </>
   )
 }

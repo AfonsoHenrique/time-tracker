@@ -1,17 +1,17 @@
 import { addDays } from 'date-fns'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { DatePickerTitle } from '../../components/DatePickerTitle'
 import { BalanceStat, Stat } from '../../components/Stat'
 import { getRepository } from '../../db/repository'
 import { intervalMinutes, intervalsOfDay, summarizeDay, summarizeWeek } from '../../lib/balance'
-import { formatLastBackup, isBackupDue } from '../../lib/backup'
-import { formatDayTitle, formatElapsed, formatShortDay, formatTime } from '../../lib/clock'
+import { formatDayTitle, formatElapsed, formatForecast, formatShortDay, formatTime } from '../../lib/clock'
 import { formatDevOpsRefs } from '../../lib/devops'
-import { formatDuration } from '../../lib/duration'
+import { formatDecimalHours, formatDuration } from '../../lib/duration'
+import { forecastDayEnd } from '../../lib/forecast'
 import { describeIrregularity, findIrregularities } from '../../lib/irregular'
 import { dayKey, isWorkDay, parseDayKey } from '../../lib/time'
 import type { Interval } from '../../lib/types'
 import { errorMessage } from '../shared/errors'
-import { readLastBackup } from '../shared/lastBackup'
 import { useNow } from '../shared/useNow'
 import { useRangeData, type RangeData } from '../shared/useRangeData'
 import { IntervalSheet, type IntervalValues } from './IntervalSheet'
@@ -42,7 +42,7 @@ export function TodayScreen({ day: selected, onChangeDay }: Props) {
         <button type="button" className="icon-button" aria-label="Dia anterior" onClick={() => shift(-1)}>
           ‹
         </button>
-        <h1 className="day-title">{formatDayTitle(day, now)}</h1>
+        <DatePickerTitle title={formatDayTitle(day, now)} value={day} onPick={goTo} />
         <button type="button" className="icon-button" aria-label="Próximo dia" onClick={() => shift(1)}>
           ›
         </button>
@@ -80,6 +80,11 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
   const intervals = intervalsOfDay(weekIntervals, day)
   const summary = summarizeDay(day, weekIntervals, daysOff, settings, now)
   const week = summarizeWeek(day, weekIntervals, daysOff, settings, now)
+  // O intervalo aberto pode ser de outra semana; ele entra para a previsão saber que o dia está irregular.
+  const forecastIntervals = open ? [...weekIntervals.filter((interval) => interval.id !== open.id), open] : weekIntervals
+  const forecastText = isToday
+    ? formatForecast(forecastDayEnd({ date: day, intervals: forecastIntervals, target: summary.target, now }), day)
+    : null
   const problems = findIrregularities({ date: day, intervals, target: summary.target, now })
 
   const act = (action: () => Promise<unknown>) => {
@@ -126,11 +131,15 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
         <BalanceStat label="no dia" remaining={summary.remaining} extra={summary.extra} />
         <BalanceStat label="na semana" remaining={week.remaining} extra={week.extra} />
       </section>
+      {forecastText !== null && (
+        <p className="forecast-line" role="status">
+          {forecastText}
+        </p>
+      )}
       <p className="target-line muted">
         Meta do dia {formatDuration(summary.target)} · da semana {formatDuration(week.target)}
       </p>
 
-      {isToday && <BackupReminder now={now} data={data} />}
 
       {problems.length > 0 && (
         <div className="alert alert-warning" role="status">
@@ -174,7 +183,10 @@ function DayView({ day, isToday, now, data, run }: DayViewProps) {
                   <span className="interval-time">
                     {formatTime(interval.start)} – {interval.end === null ? 'agora' : formatTime(interval.end)}
                   </span>
-                  <span className="interval-duration">{formatDuration(intervalMinutes(interval, now))}</span>
+                  <span className="interval-duration">
+                    {formatDuration(intervalMinutes(interval, now))}
+                    <span className="interval-decimal"> · {formatDecimalHours(intervalMinutes(interval, now))}</span>
+                  </span>
                   {interval.note && <span className="interval-note">{interval.note}</span>}
                   <DevOpsLine interval={interval} />
                 </button>
@@ -211,34 +223,5 @@ function DevOpsLine({ interval }: { interval: Interval }) {
       {refs}
       {interval.declared && <span className="interval-declared">{refs && ' · '}✓ Declarado</span>}
     </span>
-  )
-}
-
-/**
- * Aviso discreto quando o último backup tem mais de 14 dias, ou quando nunca houve backup e já
- * há dados. `data` muda a cada gravação, e aí a contagem de intervalos é refeita.
- */
-function BackupReminder({ now, data }: { now: Date; data: RangeData }) {
-  const [hasData, setHasData] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    let alive = true
-    void getRepository()
-      .countIntervals()
-      .then((count) => {
-        if (alive) setHasData(count > 0)
-      })
-    return () => {
-      alive = false
-    }
-  }, [data])
-
-  const lastBackupAt = readLastBackup()
-  if (hasData === null || !isBackupDue(lastBackupAt, hasData, now)) return null
-  return (
-    <p className="backup-reminder" role="status">
-      {lastBackupAt === null ? 'Você ainda não fez backup.' : `Último backup ${formatLastBackup(lastBackupAt, now)}.`}{' '}
-      <a href="#/dados">Fazer backup</a>
-    </p>
   )
 }

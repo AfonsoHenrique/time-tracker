@@ -25,3 +25,4 @@ dist-ssr
 
 # Claude Code: configurações locais de cada pessoa
 .claude/settings.local.json
+firestore-debug.log

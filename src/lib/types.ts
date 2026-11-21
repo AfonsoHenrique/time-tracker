@@ -31,6 +31,15 @@ export const EMPTY_DEVOPS_FIELDS: Readonly<Pick<Interval, 'workItemId' | 'taskId
 /** Tamanho máximo do projeto de um intervalo. */
 export const PROJECT_MAX_LENGTH = 15
 
+/**
+ * Tamanho máximo de uma observação nova ou alterada (spec 012). Observações antigas maiores
+ * continuam valendo: o backup e a sincronização aceitam qualquer tamanho.
+ */
+export const NOTE_MAX_LENGTH = 200
+
+/** Dígitos de um id de work item ou task. O valor ainda tem o limite de 32 bits (`isDevOpsId`). */
+export const DEVOPS_ID_MAX_DIGITS = 10
+
 /** Dia sem meta (feriado, folga): tira a meta diária da semana. `date` é `AAAA-MM-DD` no fuso local. */
 export interface DayOff {
   date: string
@@ -44,12 +53,18 @@ export interface Settings {
   workDays: number[]
   /** Dia do mês em que o período mensal começa (1 a 28). O período vai até o dia anterior do mês seguinte. */
   periodStartDay: number
+  /** Lançamento no Azure DevOps (spec 013): arredondar a duração de cada intervalo para 15 min. */
+  launchRoundQuarter: boolean
+  /** Lançamento no Azure DevOps (spec 013): fechar a task (Closed) em vez de deixar em Active. */
+  launchClose: boolean
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
   dailyTargetMinutes: 8 * 60,
   workDays: [1, 2, 3, 4, 5],
   periodStartDay: 26,
+  launchRoundQuarter: false,
+  launchClose: false,
 }
 
 /** Intervalo fechado de dias, em chaves `AAAA-MM-DD` (as duas pontas incluídas). */

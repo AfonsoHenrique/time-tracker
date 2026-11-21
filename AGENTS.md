@@ -21,6 +21,7 @@ npm test             # testes (Vitest)
 npm run lint         # oxlint
 npm run typecheck    # tsc sem emitir arquivos
 npm run check        # lint + typecheck + testes
+npm run test:rules   # regras do Firestore e sync de ponta a ponta nos emuladores (precisa de Java 21)
 npm run build        # tsc + build de produção em dist/
 VITE_APP_ENV=hml npm run build   # build de homologação
 ```
@@ -38,24 +39,38 @@ src/
     time.ts         # dia local, semana, período 26–25, dias úteis
     balance.ts      # trabalhado, meta, falta e excedente (dia, semana e qualquer faixa)
     irregular.ts    # dias irregulares e o texto de cada motivo
-    clock.ts        # cronômetro, títulos de dia e semana, horas HH:MM e formulário de intervalo
+    duration.ts     # H:MM (formatDuration) e horas decimais do Azure DevOps (formatDecimalHours)
+    clock.ts        # cronômetro, títulos de dia e semana, horas HH:MM, formulário de intervalo e texto da previsão
+    forecast.ts     # previsão do horário de saída do dia (com reserva de almoço)
     route.ts        # rota no hash da URL (#/hoje/…, #/semana/…, #/periodo/…, #/dados)
     export.ts       # linhas da planilha HORAS.xlsx, TSV e CSV
-    devops.ts       # ids de work item/task, projeto e padrões para dados antigos
+    devops.ts       # ids de work item/task, projeto, observação e padrões para dados antigos
+    devopsLaunch.ts # lançamento no Azure DevOps: plano por task, arredondamento, detalhes e JSON Patch
     settings.ts     # validação das configurações (repositório e backup)
-    backup.ts       # arquivo de backup: montar, validar, resumo e aviso de backup
+    backup.ts       # arquivo de backup: montar, validar, resumo e data do último backup
+    demo.ts         # dados fictícios do modo demo da homologação
+    env.ts          # ambiente (IS_HML, IS_DEMO) e nome do banco
+    sync.ts         # chaves, conflito (última gravação vence) e plano do primeiro login
+    account.ts      # provedores de login, textos de erro e do estado da sincronização
+    firebaseConfig.ts # configuração web (pública) do projeto Firebase
+    theme.ts        # escolha de tema (Sistema, Claro, Escuro) e chave do localStorage
     test-helpers.ts # at() e iv() para montar instantes e intervalos nos testes
     *.test.ts       # testes ao lado do código
   db/
-    schema.ts       # Dexie (PontoDb): tabelas, índices e migrações (versão 3)
-    repository.ts   # única porta de entrada para os dados (getRepository)
+    schema.ts       # Dexie (PontoDb): tabelas, índices e migrações (versão 4)
+    repository.ts   # única porta de entrada para os dados (getRepository), com fila da sincronização
+    demo.ts         # liga, recria e desliga o modo demo (banco separado)
+  devops/           # Azure DevOps (spec 013): client (REST), connection (token no localStorage), launch (prévia e lançamento)
+  sync/             # engine, autoSync (gatilhos), firestoreRemote, memoryRemote, firebase (login, carregado sob demanda), session (estado da conta)
   features/
-    shared/         # useRangeData (semana ou período), useNow, useRoute, ExportPanel, errors, lastBackup
+    devops/         # DevOpsSection (aba Dados) e LaunchPanel (Semana e Período)
+    shared/         # useRangeData (semana ou período), useNow, useRoute, useAccount, ExportPanel, errors, lastBackup, theme
     today/          # tela Hoje: TodayScreen, IntervalSheet
     week/           # tela Semana: WeekScreen
     period/         # tela Período: PeriodScreen
-    data/           # aba Dados: DataScreen (backup, restaurar, armazenamento)
-  components/       # TabBar, Stat/BalanceStat: visuais, sem regra de negócio
+    data/           # aba Dados: DataScreen (conta, aparência, backup, restaurar, armazenamento), AccountSection e DemoSection (só hml)
+  components/       # TabBar, Stat/BalanceStat, DatePickerTitle: visuais, sem regra de negócio
+firebase/           # firestore.rules e testes nos emuladores
 docs/               # produto, arquitetura, ADRs e specs
 .github/workflows/  # ci.yml (PRs) e deploy.yml (Pages)
 ```
@@ -84,7 +99,7 @@ docs/               # produto, arquitetura, ADRs e specs
 | Ambiente | Branch | URL | Banco IndexedDB |
 |---|---|---|---|
 | Produção | `main` | `/time-tracker/` | `ponto` |
-| Homologação | `develop` | `/time-tracker/hml/` | `ponto-hml` |
+| Homologação | `develop` | `/time-tracker/hml/` | `ponto-hml` (modo demo: `ponto-hml-demo`) |
 
 Use `DB_NAME` e `IS_HML` de `src/lib/env.ts`; nunca escreva o nome do banco à mão.
 
@@ -93,4 +108,6 @@ Use `DB_NAME` e `IS_HML` de `src/lib/env.ts`; nunca escreva o nome do banco à m
 - Commitar direto em `main` ou `develop`. Sempre branch + PR para `develop`.
 - Desabilitar, pular ou apagar teste para o CI passar.
 - Mudar a estrutura dos dados salvos sem migração do Dexie (versão nova do schema).
-- Adicionar backend, login ou serviço externo na fase 1 (ver [ADR 0001](docs/adr/0001-dados-locais-indexeddb.md)).
+- Adicionar backend ou serviço externo além do Firebase da fase 2 (ver [ADR 0004](docs/adr/0004-sincronizacao-dexie-firestore.md)) e da API do Azure DevOps da fase 3 (ver [ADR 0005](docs/adr/0005-azure-devops-com-pat-local.md)).
+- Guardar o token do Azure DevOps no banco, no backup ou no Firestore: ele fica só no `localStorage` (`src/devops/connection.ts`).
+- Fazer as telas falarem com o Firestore: a sincronização passa pelo repositório e por `src/sync/`.

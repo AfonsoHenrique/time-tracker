@@ -6,7 +6,6 @@ import {
   formatDayBr,
   formatExportedAt,
   formatLastBackup,
-  isBackupDue,
   parseBackup,
   type BackupData,
 } from './backup'
@@ -120,6 +119,18 @@ describe('buildBackup e parseBackup', () => {
     expect(result.ok && result.data.settings).toEqual(DEFAULT_SETTINGS)
   })
 
+  it('configurações sem as opções de lançamento ficam desligadas; valor inválido é recusado (spec 013, CA11)', () => {
+    const base = buildBackup(sampleData(), now, 'prod')
+    const old = parseBackup(text({ ...base, settings: { dailyTargetMinutes: 480, workDays: [1, 2, 3, 4, 5], periodStartDay: 26 } }))
+    expect(old.ok && old.data.settings).toEqual(DEFAULT_SETTINGS)
+    const on = parseBackup(text({ ...base, settings: { ...DEFAULT_SETTINGS, launchRoundQuarter: true, launchClose: true } }))
+    expect(on.ok && on.data.settings).toMatchObject({ launchRoundQuarter: true, launchClose: true })
+    expect(parseBackup(text({ ...base, settings: { ...DEFAULT_SETTINGS, launchClose: 'sim' } }))).toEqual({
+      ok: false,
+      error: 'Configurações inválidas: As opções de lançamento no Azure DevOps devem ser sim ou não.',
+    })
+  })
+
   it('leva o projeto e recusa projeto com mais de 15 caracteres (CA8)', () => {
     const base = buildBackup(sampleData(), now, 'prod')
     const withProject = (project: unknown) =>
@@ -130,6 +141,13 @@ describe('buildBackup e parseBackup', () => {
     expect(withProject(42)).toEqual({ ok: false, error: 'Intervalo 2 com projeto inválido.' })
   })
 
+  it('spec 012 CA4: restaura observação longa inteira, sem cortar', () => {
+    const base = buildBackup(sampleData(), now, 'prod')
+    const note = 'x'.repeat(500)
+    const result = parseBackup(text({ ...base, intervals: [{ ...base.intervals[0], note }] }))
+    expect(result.ok && result.data.intervals[0].note).toBe(note)
+  })
+
   it('normaliza instantes para UTC no minuto', () => {
     const base = buildBackup(sampleData(), now, 'prod')
     const result = parseBackup(text({ ...base, intervals: [{ ...base.intervals[0], start: '2026-11-09T08:00:59-03:00', end: '2026-11-09T12:00:00Z' }] }))
@@ -137,21 +155,7 @@ describe('buildBackup e parseBackup', () => {
   })
 })
 
-describe('isBackupDue e formatLastBackup', () => {
-  it('avisa depois de 14 dias (CA6)', () => {
-    expect(isBackupDue(at('2026-11-12 10:00'), true, now)).toBe(false)
-    expect(isBackupDue(at('2026-11-01 10:00'), true, now)).toBe(false)
-    expect(isBackupDue(at('2026-10-31 10:00'), true, now)).toBe(true)
-    // CA6: há 15 dias avisa; há 3 dias, não.
-    expect(isBackupDue(at('2026-10-31 18:00'), true, now)).toBe(true)
-    expect(isBackupDue(at('2026-11-12 18:00'), true, now)).toBe(false)
-  })
-
-  it('sem backup, avisa só se já há dados', () => {
-    expect(isBackupDue(null, false, now)).toBe(false)
-    expect(isBackupDue(null, true, now)).toBe(true)
-  })
-
+describe('formatLastBackup', () => {
   it('texto do último backup', () => {
     expect(formatLastBackup(null, now)).toBe('nunca')
     expect(formatLastBackup(at('2026-11-15 08:00'), now)).toBe('hoje')
@@ -163,6 +167,7 @@ describe('isBackupDue e formatLastBackup', () => {
 describe('nomes e datas', () => {
   it('nome do arquivo e data brasileira', () => {
     expect(backupFileName(now)).toBe('ponto-backup-2026-11-15.json')
+    expect(backupFileName(now, true)).toBe('ponto-backup-demo-2026-11-15.json')
     expect(formatDayBr('2026-11-09')).toBe('09/11/2026')
     expect(formatExportedAt(at('2026-11-15 18:05'))).toBe('15/11/2026 às 18:05')
     expect(formatExportedAt('')).toBe('')

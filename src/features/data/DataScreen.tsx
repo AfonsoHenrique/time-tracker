@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { getRepository } from '../../db/repository'
 import {
-  backupFileName,
-  buildBackup,
   formatBytes,
   formatDayBr,
   formatExportedAt,
@@ -12,7 +10,13 @@ import {
   type BackupSummary,
 } from '../../lib/backup'
 import { APP_ENV, type AppEnv } from '../../lib/env'
-import { readLastBackup, saveLastBackup } from '../shared/lastBackup'
+import { THEME_CHOICES, THEME_LABELS, type ThemeChoice } from '../../lib/theme'
+import { readLastBackup } from '../shared/lastBackup'
+import { useAccount } from '../shared/useAccount'
+import { DevOpsSection } from '../devops/DevOpsSection'
+import { AccountSection } from './AccountSection'
+import { downloadBackup } from './downloadBackup'
+import { applyTheme, readThemeChoice, saveThemeChoice } from '../shared/theme'
 import { useNow } from '../shared/useNow'
 import './data.css'
 
@@ -20,17 +24,61 @@ type Feedback = { kind: 'ok' | 'error'; text: string } | null
 
 const ENV_LABEL: Record<AppEnv, string> = { prod: 'produção', hml: 'homologação' }
 
+// Só a homologação carrega o bloco do modo demo; na produção ele nem entra no bundle (spec 010).
+// A condição repete `import.meta.env` em vez de usar `IS_HML` para o build conseguir cortar o import.
+const DemoSection = import.meta.env.VITE_APP_ENV === 'hml' ? lazy(() => import('./DemoSection')) : null
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
-/** Aba Dados: baixar backup, restaurar um backup e ver o armazenamento do navegador. */
+/** Aba Dados: conta e sincronização, tema, Azure DevOps, baixar backup, restaurar um backup e ver o armazenamento do navegador. */
 export function DataScreen() {
   return (
     <main className="app data">
       <h1 className="data-title">Dados</h1>
+      <AccountSection />
+      <AppearanceSection />
+      <DevOpsSection />
       <BackupSection />
       <RestoreSection />
       <StorageSection />
+      {DemoSection && (
+        <Suspense fallback={null}>
+          <DemoSection />
+        </Suspense>
+      )}
     </main>
+  )
+}
+
+/** Tema do app neste aparelho (spec 012): segue o sistema ou fica fixo em claro ou escuro. */
+function AppearanceSection() {
+  const [choice, setChoice] = useState<ThemeChoice>(readThemeChoice)
+
+  const pick = (next: ThemeChoice) => {
+    setChoice(next)
+    saveThemeChoice(next)
+    applyTheme(next)
+  }
+
+  return (
+    <section className="data-block" aria-labelledby="appearance-title">
+      <h2 id="appearance-title">Aparência</h2>
+      <p className="muted">Vale só neste aparelho. Em Sistema, o app acompanha o tema claro ou escuro do aparelho.</p>
+      <div className="theme-options" role="radiogroup" aria-labelledby="appearance-title">
+        {THEME_CHOICES.map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={choice === option}
+            className="button theme-option"
+            onClick={() => pick(option)}
+          >
+            {THEME_LABELS[option]}
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -44,18 +92,9 @@ function BackupSection() {
     setBusy(true)
     setFeedback(null)
     try {
-      const exportedAt = new Date()
-      const data = await getRepository().exportAll()
-      const json = JSON.stringify(buildBackup(data, exportedAt, APP_ENV), null, 2)
-      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
-      const link = document.createElement('a')
-      link.href = url
-      link.download = backupFileName(exportedAt)
-      link.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-      saveLastBackup(exportedAt)
+      const { exportedAt, intervals } = await downloadBackup()
       setLastBackupAt(exportedAt.toISOString())
-      setFeedback({ kind: 'ok', text: `Backup baixado com ${plural(data.intervals.length, 'intervalo', 'intervalos')}.` })
+      setFeedback({ kind: 'ok', text: `Backup baixado com ${plural(intervals, 'intervalo', 'intervalos')}.` })
     } catch (error) {
       console.error(error)
       setFeedback({ kind: 'error', text: 'Não foi possível gerar o backup. Tente de novo.' })
@@ -158,6 +197,7 @@ interface SummaryProps {
 }
 
 function RestoreSummary({ pending: { summary, current }, busy, onConfirm, onCancel }: SummaryProps) {
+  const synced = useAccount().phase === 'linked'
   const otherEnv = summary.env !== APP_ENV
   const exportedAt = formatExportedAt(summary.exportedAt)
   return (
@@ -179,6 +219,7 @@ function RestoreSummary({ pending: { summary, current }, busy, onConfirm, onCanc
       </ul>
       <p className="restore-warning">
         Os dados deste aparelho ({plural(current, 'intervalo', 'intervalos')}) serão apagados e trocados por estes.
+        {synced && ' A sincronização está ligada: a nuvem e o outro aparelho também ficam com os dados do backup.'}
       </p>
       <div className="restore-actions">
         <button type="button" className="button" onClick={onCancel} disabled={busy}>

@@ -24,7 +24,9 @@ PWA estático, sem servidor. Tudo roda no navegador e os dados ficam no IndexedD
 |---|---|---|
 | `src/lib/` | Regras puras: durações, metas, saldos, semanas, período 26–25, irregularidades, formatação do CSV | só `date-fns` |
 | `src/db/` | Schema Dexie, migrações e funções de repositório (`listIntervals(from, to)`, `saveInterval`…) | `lib/`, `dexie` |
-| `src/features/` | Telas e hooks por funcionalidade (hoje, semana, período, dados) | `lib/`, `db/`, `components/` |
+| `src/sync/` | Sincronização com a nuvem (spec 008): motor, gatilhos e o Firestore | `lib/`, `db/`, `firebase` |
+| `src/devops/` | Lançamento no Azure DevOps (spec 013): cliente REST, conexão guardada no aparelho e o fluxo prévia → gravar → marcar | `lib/` |
+| `src/features/` | Telas e hooks por funcionalidade (hoje, semana, período, dados) | `lib/`, `db/`, `sync/`, `components/` |
 | `src/components/` | Componentes visuais reutilizáveis, sem regra de negócio | — |
 
 A regra que mais importa: **a UI nunca importa Dexie diretamente**. Na fase 2, o repositório passa a falar com o Firestore e as telas não mudam.
@@ -34,6 +36,7 @@ Como as telas leem os dados:
 - As telas usam `useRangeData('week' | 'period', dia)`, que lê pelo repositório a semana ou o período que contém o dia e expõe `run(ação)`, que executa a escrita e recarrega. Não há cache global nem `dexie-react-hooks`. O período (até 31 dias) vem numa leitura só.
 - Hoje e Semana carregam a **semana inteira** do dia mostrado (a tela Hoje precisa da falta na semana). Ao trocar de dia dentro da mesma semana, a tela continua com os dados que já tem enquanto a nova leitura chega, sem piscar.
 - Os hooks recarregam quando o app volta ao primeiro plano (`visibilitychange`), porque outra aba pode ter mudado os dados.
+- Os hooks também recarregam com o evento `ponto:synced` (`SYNCED_EVENT`), que a sincronização dispara quando traz mudanças de outro aparelho.
 - O relógio (`useNow`) atualiza a cada segundo. O dia de "hoje" sai dele, então a tela vira de dia sozinha à meia-noite.
 
 Navegação:
@@ -41,7 +44,7 @@ Navegação:
 - A tela e o dia ficam no hash da URL: `#/hoje`, `#/hoje/2026-11-10`, `#/semana`, `#/semana/2026-11-02`, `#/periodo`, `#/periodo/2026-11-10` e `#/dados` (sem data). Sem data, a tela segue hoje ou a semana atual. `src/lib/route.ts` lê e escreve o hash, e `useRoute` escuta `hashchange`. Não há biblioteca de roteamento.
 - Abrir uma semana a partir do Período também cria entrada no histórico.
 - Hash, e não caminho, porque o GitHub Pages não reescreve caminhos para o `index.html`, e o service worker já serve a página do app.
-- Abrir um dia a partir da Semana cria uma entrada no histórico, então o botão voltar do Android retorna à mesma semana. As setas e os botões "Voltar para hoje" e "Esta semana" substituem a entrada atual, para o voltar não passar dia por dia.
+- Abrir um dia a partir da Semana cria uma entrada no histórico, então o botão voltar do Android retorna à mesma semana. As setas, o calendário do título (`DatePickerTitle`) e os botões "Voltar para hoje" e "Esta semana" substituem a entrada atual, para o voltar não passar dia por dia.
 
 ## Modelo de dados
 
@@ -68,6 +71,8 @@ interface Settings {
   dailyTargetMinutes: number   // 480
   workDays: number[]           // 1..5 (seg..sex)
   periodStartDay: number       // 26
+  launchRoundQuarter: boolean  // lançamento: arredondar cada intervalo para 15 min (padrão false)
+  launchClose: boolean         // lançamento: fechar a task (padrão false = Active)
 }
 ```
 
@@ -80,24 +85,54 @@ Versões do schema (`src/db/schema.ts`):
 - **1**: tabelas `intervals`, `daysOff` e `settings`.
 - **2** (spec 005): campos do Azure DevOps no intervalo. Mesmos índices; o `upgrade` aplica `withDevOpsDefaults` de `src/lib/devops.ts`, que também serve para importar backups antigos.
 - **3** (spec 007): projeto no intervalo. Mesmos índices e o mesmo `upgrade`.
+- **4** (spec 008): sincronização. Tabelas `outbox` (mudanças que ainda não subiram), `tombstones` (marcas de apagado) e `syncState` (conta, cursor de leitura, último ciclo e erro). Dias sem meta e configurações ganham `updatedAt` no banco (`DayOffRow`, `SettingsRow`); os tipos de `lib/types.ts` e o backup não mudam.
 
 Regras de gravação (`src/db/repository.ts`):
 
+- Toda gravação e todo apagar entram na `outbox` na mesma transação; apagar também grava uma marca em `tombstones`. `onLocalChange` avisa as gravações do aparelho.
 - Só pode existir um intervalo em andamento. Abrir outro, ou reabrir um fechado, falha com `RepositoryError` de código `open-interval-exists`.
 - O fim não pode ser antes do início (`invalid-interval`).
 - Work item e task são inteiros positivos ou `null`, e o projeto tem no máximo 15 caracteres (`invalid-interval`). Num patch, `undefined` mantém o valor e `null` limpa.
 - Intervalos fechados podem se sobrepor: o destaque de dia irregular avisa, e o usuário corrige.
-- O intervalo aberto é achado por filtro, porque o IndexedDB não indexa `null`.
+- O intervalo aberto é achado por filtro, porque o IndexedDB não indexa `null`. Depois de sincronizar pode haver dois abertos (entrada nos dois aparelhos sem rede): vale o mais recente, e o dia aparece como irregular pela sobreposição.
+- `markDeclared(ids)` marca intervalos como declarados numa transação (lançamento no Azure DevOps).
 - `exportAll()` lê as três tabelas para o backup. `replaceAll(data)` limpa e regrava as três numa única transação: se algo falhar no meio, os dados anteriores continuam lá.
+
+## Sincronização (spec 008, ADR 0004)
+
+O Dexie continua sendo a fonte da verdade no aparelho. A nuvem é atualizada em segundo plano.
+
+- `src/lib/sync.ts` (puro): chaves dos registros (`intervals/{id}`, `daysOff/{dia}`, `settings/settings`), regra de conflito (`isNewer`: vence o `updatedAt` mais recente, ou a data do apagar) e o plano do primeiro login (`planFirstSync`).
+- `repository.sync` (`src/db/repository.ts`): `pending`, `markPushed`, `applyRemote` (valida como o backup, não entra na fila nem avisa `onLocalChange`), `enqueueAll`, `clearForDownload` e o estado.
+- `src/sync/engine.ts`: um ciclo envia a fila e depois recebe o que mudou desde o cursor. Os ciclos ficam em fila na aba e usam `navigator.locks` entre abas. `link(uid, 'upload' | 'merge' | 'cloud-only')` liga o aparelho a uma conta; `unlink()` para a sincronização e mantém os dados.
+- `src/sync/autoSync.ts`: gatilhos (ao começar, ao voltar para o primeiro plano, quando a rede volta, 3 s depois de gravar e a cada minuto com o app visível).
+- `src/sync/firestoreRemote.ts`: Firestore lite em `users/{uid}/envs/{prod|hml}/{intervals|daysOff|meta}/{id}`. Cada documento é `{ data, updatedAt, deletedAt, syncedAt }`; `syncedAt` é a hora do servidor e serve de cursor (relido com 2 minutos de folga). Só grava um documento mais novo que o da nuvem, numa transação.
+- `src/sync/memoryRemote.ts`: a mesma nuvem em memória, para os testes.
+- `src/sync/firebase.ts`: Firebase Auth (Google e Microsoft por popup, vínculo com `linkWithPopup`, sessão em `indexedDBLocalPersistence`) e Firestore lite. Um app Firebase por ambiente (`ponto-prod`, `ponto-hml`), porque a sessão é guardada pelo nome do app e os dois ambientes estão na mesma origem. A configuração pública fica em `src/lib/firebaseConfig.ts`. Este módulo só é carregado com `import()`: ao abrir o app quando o aparelho já está ligado a uma conta, ou na aba Dados antes do clique em Entrar (o navegador só abre a janela de login logo depois do toque).
+- `src/sync/session.ts`: estado da conta (`off`, `loading`, `expired`, `choosing`, `linked`), primeiro login, vínculo, sair e o estado da sincronização para a tela. `main.tsx` chama `init()`; as telas leem com `useAccount` (`src/features/shared/`). Textos de erro e de estado são puros em `src/lib/account.ts`.
+- No modo demo da homologação a sincronização fica desligada.
+- Restaurar um backup com a sincronização ligada dá `updatedAt` de agora a tudo e marca o que sumiu, para o backup vencer também na nuvem.
+
+Regras do Firestore em `firebase/firestore.rules`: cada usuário só lê e grava em `users/{seu uid}/…`, os documentos são validados como no repositório, uma versão mais antiga não substitui a mais nova e apagar de verdade é proibido. `npm run test:rules` roda os testes das regras e a sincronização de ponta a ponta nos emuladores do Firebase (precisa de Java 21); o CI roda o mesmo num job separado. O deploy das regras é manual (`npx firebase-tools deploy --only firestore:rules`, projeto em `.firebaserc`) ou colando o arquivo no console do Firebase.
 
 ## Ambientes
 
-O build lê `VITE_APP_ENV` (`prod` padrão, ou `hml`) em `vite.config.ts`, e isso define base, nome, cor e manifest. Em tempo de execução, `src/lib/env.ts` expõe `APP_ENV`, `IS_HML` e `DB_NAME`.
+O build lê `VITE_APP_ENV` (`prod` padrão, ou `hml`) em `vite.config.ts`, e isso define base, nome, cor e manifest. Em tempo de execução, `src/lib/env.ts` expõe `APP_ENV`, `IS_HML`, `IS_DEMO` e `DB_NAME`.
 
 Os dois ambientes ficam na **mesma origem** (`afonsohenrique.github.io`):
 
 - O IndexedDB é separado por origem, por isso cada ambiente usa um `DB_NAME` diferente.
 - O service worker de produção tem escopo `/time-tracker/`, que contém `/hml/`. Por isso a produção usa `navigateFallbackDenylist` para `/time-tracker/hml/`.
+
+### Modo demo (só homologação)
+
+Spec 010. Na homologação, a aba Dados liga um modo demo que preenche a semana anterior e a atual com dados fictícios:
+
+- O gerador é puro e determinístico: `buildDemoData(now)`, em `src/lib/demo.ts`.
+- Os dados ficam num banco separado (`DEMO_DB_NAME = 'ponto-hml-demo'`). Com `ponto-hml:demo = '1'` no `localStorage`, `DB_NAME` aponta para ele, e o selo diz "Homologação · Demo". Ligar, recriar e sair gravam a chave e recarregam a página (`src/db/demo.ts`). O banco `ponto-hml` nunca é aberto pelo demo.
+- A data do último backup segue o `DB_NAME`, então o demo tem a sua (`ponto-hml-demo:lastBackupAt`).
+- O demo nunca sincroniza (spec 010, R10). Hoje o `startAutoSync` ainda não é chamado pela interface. Quando o login da spec 008 (T6) passar a chamá-lo, ele não deve rodar com `IS_DEMO`, senão os dados fictícios sobem para `envs/hml`.
+- Para o demo não entrar no build de produção, as condições usam `import.meta.env.VITE_APP_ENV === 'hml'` direto (o Vite troca por texto e o minificador corta o ramo), e a aba Dados carrega `DemoSection` com `lazy(() => import(…))`. Um `IS_HML` importado de outro módulo não basta para o build cortar o `import()`.
 
 ## Deploy
 
@@ -111,6 +146,23 @@ Os dois ambientes ficam na **mesma origem** (`afonsohenrique.github.io`):
   - A versão do formato do backup é independente da versão do schema do Dexie.
   - A data do último backup baixado fica no `localStorage` (`ponto:lastBackupAt` ou `ponto-hml:lastBackupAt`), por `src/features/shared/lastBackup.ts`. É só uma informação do aparelho, fora do banco.
   - Restaurar sempre substitui tudo; não há mesclagem.
+  - Observações de qualquer tamanho são aceitas na restauração e na sincronização; o limite de 200 caracteres (spec 012) vale só para observações novas ou alteradas, no formulário e no repositório.
+
+## Lançamento no Azure DevOps (spec 013, ADR 0005)
+
+O app chama a API REST de `dev.azure.com` direto do navegador, que aceita CORS com o cabeçalho `Authorization`. Não há servidor no meio.
+
+- `src/lib/devopsLaunch.ts` (puro): organização digitada (`parseOrganization`), arredondamento (`roundToQuarter`), plano por task (`planLaunch`: total, datas da semana, linhas dos detalhes), HTML dos detalhes, JSON Patch (`buildPatch`) e estados (`launchStates`: New → Active e, com a opção, Closed numa segunda requisição).
+- `src/devops/client.ts`: `fetch` com `Authorization: Basic` do token. Lê a conta (`connectionData`), os campos da organização (`_apis/wit/fields`), os valores permitidos de um campo no projeto da task, as tasks em lote e grava com `PATCH` (`application/json-patch+json`). Erros viram códigos (`unauthorized`, `not-found`, `conflict`, `rule`, `offline`).
+- `src/devops/connection.ts`: organização, token, conta, campos da organização (Tipo de atividade e Detalhes do apontamento, que têm nomes internos diferentes em cada organização) e o último tipo usado, no `localStorage` (`ponto:devops` ou `ponto-hml:devops`). Fora do Dexie de propósito: não entra na `outbox`, no Firestore nem no backup.
+- `src/devops/launch.ts`: `loadPreview` lê as tasks e marca as que não existem ou não são Task; `runLaunch` grava uma task por vez e só então chama `repository.markDeclared(ids)`. Token recusado para o lançamento.
+- O total é **substituído** na task, por isso o plano usa todos os intervalos da task nas semanas inteiras que a tela toca (o período 26–25 corta semanas) e repetir um lançamento não conta em dobro.
+- As opções `launchRoundQuarter` e `launchClose` ficam nas configurações (sincronizadas). As regras do Firestore aceitam os dois campos; **é preciso publicar as regras de novo** (`npx firebase-tools deploy --only firestore:rules`), senão as configurações com os campos novos não sobem.
+- No modo demo o lançamento fica escondido.
+
+## Tema
+
+O app segue o tema do sistema (`prefers-color-scheme`), a não ser que o usuário fixe Claro ou Escuro na aba Dados (spec 012). A escolha fica no `localStorage` (`ponto-theme`, a mesma chave em produção e homologação), fora do banco, do backup e da sincronização. Um script pequeno no `index.html` põe `data-theme` no `<html>` antes do primeiro quadro; `src/index.css` aplica as cores escuras em `:root[data-theme='dark']` ou pelo sistema quando não há `data-theme='light'`. A lógica pura fica em `src/lib/theme.ts`, e ler, gravar e aplicar, em `src/features/shared/theme.ts`.
 
 ## Exportação
 

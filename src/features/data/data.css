@@ -21,6 +21,23 @@
   font-size: 0.9rem;
 }
 
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.theme-option {
+  padding: 8px;
+}
+
+.theme-option[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
 .data-last {
   font-weight: 600;
 }
@@ -97,4 +114,43 @@
   border: 1px solid var(--warning-border);
   border-radius: 10px;
   background: var(--warning-bg);
+}
+
+/* Conta e sincronização (spec 008) */
+.account-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.account-buttons .button {
+  flex: 1 1 140px;
+}
+
+.account-user {
+  overflow-wrap: anywhere;
+}
+
+.account-status {
+  font-weight: 600;
+}
+
+.account-status-ok {
+  color: var(--ok);
+}
+
+.account-status-error {
+  color: var(--danger);
+}
+
+.account-signout {
+  margin-top: 10px;
+}
+
+.account-confirm {
+  margin-top: 10px;
+}
+
+.account-buttons-stack .button {
+  flex-basis: 100%;
 }

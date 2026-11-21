@@ -44,6 +44,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+.forecast-line {
+  margin: 12px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .target-line {
   margin: 8px 0 16px;
   font-size: 0.85rem;
@@ -115,6 +123,12 @@
 
 .interval-duration {
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.interval-decimal {
+  color: var(--muted);
+  font-weight: 400;
 }
 
 .interval-note {
@@ -189,6 +203,11 @@
   font-size: 0.8rem;
 }
 
+.sheet-count-over {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 .sheet-error {
   margin: 12px 0 0;
   color: var(--danger);
@@ -248,18 +267,4 @@
   height: 20px;
   min-height: 0;
   margin: 0;
-}
-
-.backup-reminder {
-  margin: 0 0 16px;
-  padding: 8px 12px;
-  border: 1px dashed var(--warning-border);
-  border-radius: 10px;
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-.backup-reminder a {
-  color: var(--accent);
-  font-weight: 600;
 }

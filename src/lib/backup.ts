@@ -8,9 +8,6 @@ import { DEFAULT_SETTINGS, PROJECT_MAX_LENGTH, type DayOff, type Interval, type 
 /** Versão do formato do arquivo de backup. É independente da versão do schema do Dexie. */
 export const BACKUP_VERSION = 1
 
-/** Dias sem backup a partir dos quais a tela Hoje avisa. */
-export const BACKUP_REMINDER_DAYS = 14
-
 /** Tudo o que o app guarda. É o que o backup leva e o que a restauração grava. */
 export interface BackupData {
   intervals: Interval[]
@@ -29,8 +26,9 @@ export function buildBackup(data: BackupData, now: Date, env: AppEnv): BackupFil
   return { app: 'ponto', version: BACKUP_VERSION, exportedAt: now.toISOString(), env, ...data }
 }
 
-export function backupFileName(now: Date): string {
-  return `ponto-backup-${dayKey(now)}.json`
+/** Nome do arquivo de backup. No modo demo da homologação, leva `demo` no nome. */
+export function backupFileName(now: Date, demo = false): string {
+  return `ponto-backup-${demo ? 'demo-' : ''}${dayKey(now)}.json`
 }
 
 export interface BackupSummary {
@@ -113,6 +111,8 @@ function readSettings(raw: unknown): Settings {
     dailyTargetMinutes: (raw.dailyTargetMinutes ?? DEFAULT_SETTINGS.dailyTargetMinutes) as number,
     workDays: (raw.workDays ?? [...DEFAULT_SETTINGS.workDays]) as number[],
     periodStartDay: (raw.periodStartDay ?? DEFAULT_SETTINGS.periodStartDay) as number,
+    launchRoundQuarter: (raw.launchRoundQuarter ?? DEFAULT_SETTINGS.launchRoundQuarter) as boolean,
+    launchClose: (raw.launchClose ?? DEFAULT_SETTINGS.launchClose) as boolean,
   }
   const problem = settingsProblem(settings)
   if (problem) throw new BackupError(`Configurações inválidas: ${problem}`)
@@ -172,14 +172,6 @@ export function parseBackup(text: string): ParseResult {
   }
 }
 
-/** Se a tela Hoje deve lembrar de fazer backup. */
-export function isBackupDue(lastBackupAt: string | null, hasData: boolean, now: Date): boolean {
-  if (lastBackupAt === null) return hasData
-  const last = parseISO(lastBackupAt)
-  if (Number.isNaN(last.getTime())) return hasData
-  return differenceInCalendarDays(now, last) > BACKUP_REMINDER_DAYS
-}
-
 /** "hoje", "ontem", "há 5 dias" ou "nunca". */
 export function formatLastBackup(lastBackupAt: string | null, now: Date): string {
   if (lastBackupAt === null) return 'nunca'
@@ -215,3 +207,27 @@ export function formatBytes(bytes: number): string {
   const text = value < 10 ? value.toFixed(1).replace('.', ',').replace(',0', '') : String(Math.round(value))
   return `${text} ${units[unit]}`
 }
+
+export type RecordResult<T> = { ok: true; value: T } | { ok: false; error: string }
+
+function readRecord<T>(read: () => T): RecordResult<T> {
+  try {
+    return { ok: true, value: read() }
+  } catch (error) {
+    if (error instanceof BackupError) return { ok: false, error: error.message }
+    throw error
+  }
+}
+
+/** Valida um intervalo que veio de fora (sincronização), com as mesmas regras do backup. */
+export const parseIntervalRecord = (raw: unknown): RecordResult<Interval> => readRecord(() => readInterval(raw, 1))
+
+/** Valida um dia sem meta que veio de fora (sincronização). */
+export const parseDayOffRecord = (raw: unknown): RecordResult<DayOff> => readRecord(() => readDayOff(raw, 1))
+
+/** Valida configurações que vieram de fora (sincronização). */
+export const parseSettingsRecord = (raw: unknown): RecordResult<Settings> =>
+  readRecord(() => {
+    if (raw === undefined) throw new BackupError('Configurações ausentes.')
+    return readSettings(raw)
+  })

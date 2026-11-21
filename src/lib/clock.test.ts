@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   formatDayTitle,
   formatElapsed,
+  formatForecast,
   formatShortDay,
   formatTime,
   formatWeekdayShort,
@@ -94,12 +95,41 @@ describe('readIntervalForm', () => {
   it('spec 005 CA3: work item ou task que não são número são erro', () => {
     expect(readIntervalForm({ ...base, start: '09:00', end: '', workItem: 'abc' })).toEqual({
       ok: false,
-      error: 'O work item deve ser um número, ex.: 123567.',
+      error: 'O work item deve ser um número de até 10 dígitos, ex.: 123567.',
     })
     expect(readIntervalForm({ ...base, start: '09:00', end: '', task: '12.5' })).toEqual({
       ok: false,
-      error: 'A task deve ser um número, ex.: 123568.',
+      error: 'A task deve ser um número de até 10 dígitos, ex.: 123568.',
     })
+  })
+
+  it('spec 012 CA6: id de 10 dígitos acima do limite de 32 bits, ou zero, é erro', () => {
+    const workItemError = { ok: false, error: 'O work item deve ser um número de até 10 dígitos, ex.: 123567.' }
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', workItem: '9999999999' })).toEqual(workItemError)
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', workItem: '0' })).toEqual(workItemError)
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', task: '9999999999' })).toEqual({
+      ok: false,
+      error: 'A task deve ser um número de até 10 dígitos, ex.: 123568.',
+    })
+    expect(
+      readIntervalForm({ ...base, start: '09:00', end: '', workItem: '2147483647', task: '2147483647' }),
+    ).toMatchObject({ ok: true, workItemId: 2147483647, taskId: 2147483647 })
+  })
+
+  it('spec 012 CA3: observação nova até 200 caracteres; uma antiga maior passa se não mudou', () => {
+    const tooLong = { ok: false, error: 'A observação deve ter no máximo 200 caracteres.' }
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', note: ` ${'a'.repeat(200)} ` })).toMatchObject({
+      ok: true,
+      note: 'a'.repeat(200),
+    })
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', note: 'a'.repeat(201) })).toEqual(tooLong)
+    const old = 'b'.repeat(250)
+    expect(readIntervalForm({ ...base, start: '09:00', end: '10:00', note: old }, old)).toMatchObject({
+      ok: true,
+      note: old,
+    })
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', note: `${old}c` }, old)).toEqual(tooLong)
+    expect(readIntervalForm({ ...base, start: '09:00', end: '', note: 'b'.repeat(240) }, old)).toEqual(tooLong)
   })
 
   it('spec 007: lê o projeto sem espaços nas pontas e recusa mais de 15 caracteres', () => {
@@ -213,5 +243,43 @@ describe('formatRangeTitle com períodos', () => {
     const now = new Date(at('2026-11-08 10:00'))
     expect(formatRangeTitle({ start: '2026-10-26', end: '2026-11-25' }, now)).toBe('26 de outubro a 25 de novembro')
     expect(formatRangeTitle({ start: '2026-11-26', end: '2026-12-25' }, now)).toBe('26 de novembro a 25 de dezembro')
+  })
+})
+
+describe('formatForecast', () => {
+  const day = '2026-11-09'
+  const d = (local: string) => new Date(at(local))
+
+  it('sem previsão não mostra nada', () => {
+    expect(formatForecast({ kind: 'none' }, day)).toBeNull()
+  })
+
+  it('dentro, com almoço reservado', () => {
+    const text = formatForecast({ kind: 'forecast', at: d(`${day} 17:32`), lunchMinutes: 60, returnBy: null }, day)
+    expect(text).toBe('Saída prevista 17:32 · com 1:00 de almoço')
+  })
+
+  it('fora, com a pausa contando como almoço', () => {
+    const text = formatForecast(
+      { kind: 'forecast', at: d(`${day} 17:00`), lunchMinutes: 40, returnBy: d(`${day} 13:00`) },
+      day,
+    )
+    expect(text).toBe('Saída prevista 17:00 · se voltar até 13:00')
+  })
+
+  it('sem almoço, só a hora', () => {
+    expect(formatForecast({ kind: 'forecast', at: d(`${day} 16:00`), lunchMinutes: 0, returnBy: null }, day)).toBe(
+      'Saída prevista 16:00',
+    )
+  })
+
+  it('depois da meia-noite ganha "(amanhã)"', () => {
+    expect(formatForecast({ kind: 'forecast', at: d('2026-11-10 00:30'), lunchMinutes: 0, returnBy: null }, day)).toBe(
+      'Saída prevista 00:30 (amanhã)',
+    )
+  })
+
+  it('meta cumprida', () => {
+    expect(formatForecast({ kind: 'done', at: d(`${day} 17:00`) }, day)).toBe('Meta fechada às 17:00')
   })
 })
