@@ -113,6 +113,21 @@ describe('validação (CA10)', () => {
     const settings = (name: string, data: unknown) => setDoc(doc(db('a'), `users/a/envs/prod/meta/${name}`), envelope(data))
     await assertSucceeds(settings('settings', { dailyTargetMinutes: 480, workDays: [1, 2, 3, 4, 5], periodStartDay: 26 }))
     await assertFails(settings('settings2', { dailyTargetMinutes: 480, workDays: [1], periodStartDay: 26 }))
+    await assertSucceeds(
+      setDoc(
+        doc(db('a'), 'users/a/envs/hml/meta/settings'),
+        envelope({ dailyTargetMinutes: 480, workDays: [1], periodStartDay: 26, launchRoundQuarter: true, launchClose: false }),
+      ),
+    )
+    await assertFails(
+      setDoc(
+        doc(db('a'), 'users/a/envs/hml/meta/settings'),
+        envelope(
+          { dailyTargetMinutes: 480, workDays: [1], periodStartDay: 26, launchRoundQuarter: 'sim', launchClose: false },
+          '2026-11-09T17:00:00.000Z',
+        ),
+      ),
+    )
     await assertFails(
       setDoc(
         doc(db('a'), 'users/a/envs/prod/meta/settings'),
