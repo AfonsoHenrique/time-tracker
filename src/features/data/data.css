@@ -115,3 +115,42 @@
   border-radius: 10px;
   background: var(--warning-bg);
 }
+
+/* Conta e sincronização (spec 008) */
+.account-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.account-buttons .button {
+  flex: 1 1 140px;
+}
+
+.account-user {
+  overflow-wrap: anywhere;
+}
+
+.account-status {
+  font-weight: 600;
+}
+
+.account-status-ok {
+  color: var(--ok);
+}
+
+.account-status-error {
+  color: var(--danger);
+}
+
+.account-signout {
+  margin-top: 10px;
+}
+
+.account-confirm {
+  margin-top: 10px;
+}
+
+.account-buttons-stack .button {
+  flex-basis: 100%;
+}

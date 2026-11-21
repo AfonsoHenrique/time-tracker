@@ -47,19 +47,19 @@ Na fase 1 cada aparelho tem os seus dados, e o backup JSON é a única ponte ent
 
 ## Critérios de aceite
 
-- [ ] CA1. Sem login, todas as telas funcionam como antes e nenhuma chamada ao Firebase é feita.
+- [x] CA1. Sem login, todas as telas funcionam como antes e nenhuma chamada ao Firebase é feita.
 - [ ] CA2. Entrar com Microsoft e depois com Google (vinculado) leva ao mesmo `uid` e aos mesmos dados.
 - [ ] CA3. Bato a entrada no Mac sem rede; o intervalo aparece na hora. Quando a rede volta, ele aparece no Android em até um minuto com o app aberto, ou ao abrir o app.
 - [x] CA4. Edito a observação do mesmo intervalo no Mac (10:00) e no Android (10:05), os dois offline. Depois de sincronizar, os dois aparelhos mostram a do Android.
 - [x] CA5. Apago um intervalo no Android e edito o mesmo no Mac antes, offline. Depois de sincronizar, vale a ação mais recente nos dois aparelhos.
 - [x] CA6. Entrada batida nos dois aparelhos offline: depois de sincronizar há dois intervalos abertos, o dia fica irregular e Sair fecha o mais recente.
 - [x] CA7. Primeiro login com 20 intervalos no aparelho e nuvem vazia: os 20 sobem. Num segundo aparelho vazio, os 20 descem.
-- [ ] CA8. Primeiro login com dados nos dois lados: a tela mostra o resumo; Juntar une pelos ids; Cancelar não muda nada em nenhum lado.
+- [x] CA8. Primeiro login com dados nos dois lados: a tela mostra o resumo; Juntar une pelos ids; Cancelar não muda nada em nenhum lado.
 - [x] CA9. Com o usuário A logado, uma leitura ou gravação em `users/B/…` é negada (teste no emulador do Firestore).
 - [x] CA10. Um documento com `end` antes de `start`, ou `project` com mais de 15 caracteres, é negado pelas regras.
 - [x] CA11. Restaurar um backup com a sincronização ligada deixa a nuvem e o outro aparelho iguais ao backup.
 - [ ] CA12. Dados de homologação nunca aparecem na produção, e o contrário.
-- [ ] CA13. Sair com alterações pendentes mostra o aviso; depois de sair os dados continuam no aparelho.
+- [x] CA13. Sair com alterações pendentes mostra o aviso; depois de sair os dados continuam no aparelho.
 - [ ] CA14. O bloco Conta cabe em 390 px nos temas claro e escuro; o login funciona no Chrome do Mac e no app instalado no Android.
 
 ## Fora do escopo
@@ -126,6 +126,8 @@ Cada documento é o registro local mais `updatedAt` (do aparelho, decide o confl
 
 ### Primeiro login
 
+Na tela de escolha, o lado do aparelho mostra quantos intervalos e de quando a quando; o lado da nuvem mostra só quantos registros há (contar é uma consulta barata; achar o primeiro e o último dia exigiria um índice composto).
+
 `planFirstSync`, em `src/lib/sync.ts` (puro), decide entre subir, descer ou perguntar, a partir das contagens dos dois lados e do `uid` guardado em `syncState` (R12 a R15). Juntar = marcar tudo do aparelho na outbox e rodar um ciclo normal; o `updatedAt` resolve os repetidos. Usar só os da nuvem = `replaceAll` com os dados remotos, sem outbox.
 
 ### Backup
@@ -154,8 +156,8 @@ Cada documento é o registro local mais `updatedAt` (do aparelho, decide o confl
 - [x] T3. Repositório grava na outbox e nas marcas; `replaceAll` com sync ligado (R20) + testes.
 - [x] T4. `lib/sync.ts`: conflito e plano do primeiro login (`planFirstSync`) + testes (CA4–CA8).
 - [x] T5. `src/sync/engine.ts` com Firestore lite, gatilhos e evento `ponto:synced` + testes com o Firestore simulado e de ponta a ponta nos emuladores.
-- [ ] T6. `src/sync/auth.ts`: login, vínculo e saída; bloco Conta na aba Dados (R3, R4, R10, R16).
-- [ ] T7. Tela do primeiro login com resumo e opções (R14, R15).
+- [x] T6. `src/sync/firebase.ts` e `src/sync/session.ts`: login, vínculo e saída; bloco Conta na aba Dados (R3, R4, R10, R16).
+- [x] T7. Tela do primeiro login com resumo e opções (R14, R15).
 - [x] T8. `firestore.rules` + testes no emulador (CA9, CA10).
 - [ ] T9. Conferência no Mac e no Android instalado, nos dois ambientes (CA3, CA12, CA14).
 - [ ] T10. Atualizar PRODUCT.md, ARCHITECTURE.md, AGENTS.md e o índice de specs.
