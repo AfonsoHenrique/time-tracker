@@ -28,6 +28,6 @@ Status: Rascunho → Pronta → Em andamento → Concluída.
 | [010-modo-demo-na-homologacao](010-modo-demo-na-homologacao.md) | 6.1. Modo demo na homologação | Concluída |
 | [011-calendario-e-horas-decimais](011-calendario-e-horas-decimais.md) | 4.1. Calendário para pular de data e horas decimais | Concluída |
 | [012-limites-dos-campos-e-tema](012-limites-dos-campos-e-tema.md) | 5.3. Limites nos campos do intervalo e escolha de tema | Concluída |
-| [013-lancar-horas-no-azure-devops](013-lancar-horas-no-azure-devops.md) | 8. Lançar horas no Azure DevOps (fase 3) | Rascunho |
+| [013-lancar-horas-no-azure-devops](013-lancar-horas-no-azure-devops.md) | 8. Lançar horas no Azure DevOps (fase 3) | Em andamento |
 
 Com a 006, a fase 1 está completa.

@@ -32,7 +32,8 @@ Uso pessoal de um profissional PJ, sem controle formal da empresa. O app serve p
 - **Semana**: uma linha por dia com trabalhado, meta e alerta de irregularidade; totais; setas ‹ › para trocar de semana e calendário no título para pular para a semana de qualquer data.
 - **Período 26–25**: totais e semanas, com exportação; setas e calendário no título para trocar de período.
 - **Semana** também exporta os seus dias, porque a planilha é preenchida por semana.
-- **Dados**: escolher o tema (Sistema, Claro ou Escuro; vale só no aparelho; spec 012), baixar backup em JSON (`ponto-backup-AAAA-MM-DD.json`, com intervalos, dias sem meta e configurações), restaurar um backup (mostra um resumo e pede confirmação antes de substituir tudo) e ver se o navegador prometeu não apagar os dados. O backup serve para trocar de aparelho e para levar dados entre produção e homologação. Só na homologação, a aba também tem o **modo demo**, que mostra o app com uma semana e meia de dados fictícios num banco separado, sem tocar nos dados reais (spec 010).
+- **Semana** e **Período** têm o botão **Lançar no Azure DevOps** (spec 013), que preenche as tasks dos intervalos não declarados e os marca como declarados.
+- **Dados**: escolher o tema (Sistema, Claro ou Escuro; vale só no aparelho; spec 012), conectar o Azure DevOps (organização e token, só no aparelho) e as opções do lançamento (spec 013), baixar backup em JSON (`ponto-backup-AAAA-MM-DD.json`, com intervalos, dias sem meta e configurações), restaurar um backup (mostra um resumo e pede confirmação antes de substituir tudo) e ver se o navegador prometeu não apagar os dados. O backup serve para trocar de aparelho e para levar dados entre produção e homologação. Só na homologação, a aba também tem o **modo demo**, que mostra o app com uma semana e meia de dados fictícios num banco separado, sem tocar nos dados reais (spec 010).
 
 ## Dias irregulares
 
@@ -58,10 +59,23 @@ Mesmas colunas da aba SEMANA da planilha `HORAS.xlsx`:
 - Intervalo em andamento não entra; a tela avisa quantos ficaram de fora.
 - Intervalo que passa da meia-noite sai numa linha só, no dia do início.
 
+## Lançamento no Azure DevOps
+
+Spec 013. Para cada task com intervalos não declarados na tela, o app mostra uma prévia e, com uma confirmação, grava na task:
+
+- **Tipo de atividade** (escolhido na prévia entre os valores permitidos; vem com o último usado);
+- **Horas Estimadas** e **Horas Consumidas** com o mesmo total: a soma de todos os intervalos da task nas semanas da tela, que **substitui** o valor anterior (lançar de novo não conta em dobro);
+- **Start Date** na segunda e **Target Date** na sexta da semana;
+- **Detalhes do apontamento**: uma linha por intervalo, mais recente primeiro, ex.: `19/nov 10:30 10:45 0:15 Daily MS`;
+- **Responsável** = conta do token;
+- estado **Active** (ou **Closed**, com a opção "Fechar a task ao lançar").
+
+Por padrão vai a duração real (ex.: 50 min = 0.83 h). Com "Arredondar para 15 min", cada intervalo vai para o múltiplo de 15 mais próximo, mínimo 15. Os intervalos gravados não mudam. Depois de gravar a task, os intervalos dela ficam **Declarados**.
+
 ## Fases
 
 | Fase | Escopo |
 |---|---|
 | 1 | Tudo local, sem login, GitHub Pages |
 | 2 | Sincronização Mac/Android e login sem senha (Microsoft e Google), ver spec 008 e ADR 0004 |
-| 3 (ideia) | Quebrar blocos em atividades com task/projeto e lançar no Azure DevOps |
+| 3 | Lançar as horas nas tasks do Azure DevOps, com token pessoal guardado no aparelho (spec 013, ADR 0005) |

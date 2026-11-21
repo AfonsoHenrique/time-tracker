@@ -25,6 +25,7 @@ PWA estático, sem servidor. Tudo roda no navegador e os dados ficam no IndexedD
 | `src/lib/` | Regras puras: durações, metas, saldos, semanas, período 26–25, irregularidades, formatação do CSV | só `date-fns` |
 | `src/db/` | Schema Dexie, migrações e funções de repositório (`listIntervals(from, to)`, `saveInterval`…) | `lib/`, `dexie` |
 | `src/sync/` | Sincronização com a nuvem (spec 008): motor, gatilhos e o Firestore | `lib/`, `db/`, `firebase` |
+| `src/devops/` | Lançamento no Azure DevOps (spec 013): cliente REST, conexão guardada no aparelho e o fluxo prévia → gravar → marcar | `lib/` |
 | `src/features/` | Telas e hooks por funcionalidade (hoje, semana, período, dados) | `lib/`, `db/`, `sync/`, `components/` |
 | `src/components/` | Componentes visuais reutilizáveis, sem regra de negócio | — |
 
@@ -70,6 +71,8 @@ interface Settings {
   dailyTargetMinutes: number   // 480
   workDays: number[]           // 1..5 (seg..sex)
   periodStartDay: number       // 26
+  launchRoundQuarter: boolean  // lançamento: arredondar cada intervalo para 15 min (padrão false)
+  launchClose: boolean         // lançamento: fechar a task (padrão false = Active)
 }
 ```
 
@@ -92,6 +95,7 @@ Regras de gravação (`src/db/repository.ts`):
 - Work item e task são inteiros positivos ou `null`, e o projeto tem no máximo 15 caracteres (`invalid-interval`). Num patch, `undefined` mantém o valor e `null` limpa.
 - Intervalos fechados podem se sobrepor: o destaque de dia irregular avisa, e o usuário corrige.
 - O intervalo aberto é achado por filtro, porque o IndexedDB não indexa `null`. Depois de sincronizar pode haver dois abertos (entrada nos dois aparelhos sem rede): vale o mais recente, e o dia aparece como irregular pela sobreposição.
+- `markDeclared(ids)` marca intervalos como declarados numa transação (lançamento no Azure DevOps).
 - `exportAll()` lê as três tabelas para o backup. `replaceAll(data)` limpa e regrava as três numa única transação: se algo falhar no meio, os dados anteriores continuam lá.
 
 ## Sincronização (spec 008, ADR 0004)
@@ -143,6 +147,18 @@ Spec 010. Na homologação, a aba Dados liga um modo demo que preenche a semana 
   - A data do último backup baixado fica no `localStorage` (`ponto:lastBackupAt` ou `ponto-hml:lastBackupAt`), por `src/features/shared/lastBackup.ts`. É só uma informação do aparelho, fora do banco.
   - Restaurar sempre substitui tudo; não há mesclagem.
   - Observações de qualquer tamanho são aceitas na restauração e na sincronização; o limite de 200 caracteres (spec 012) vale só para observações novas ou alteradas, no formulário e no repositório.
+
+## Lançamento no Azure DevOps (spec 013, ADR 0005)
+
+O app chama a API REST de `dev.azure.com` direto do navegador, que aceita CORS com o cabeçalho `Authorization`. Não há servidor no meio.
+
+- `src/lib/devopsLaunch.ts` (puro): organização digitada (`parseOrganization`), arredondamento (`roundToQuarter`), plano por task (`planLaunch`: total, datas da semana, linhas dos detalhes), HTML dos detalhes, JSON Patch (`buildPatch`) e estados (`launchStates`: New → Active e, com a opção, Closed numa segunda requisição).
+- `src/devops/client.ts`: `fetch` com `Authorization: Basic` do token. Lê a conta (`connectionData`), os campos da organização (`_apis/wit/fields`), os valores permitidos de um campo no projeto da task, as tasks em lote e grava com `PATCH` (`application/json-patch+json`). Erros viram códigos (`unauthorized`, `not-found`, `conflict`, `rule`, `offline`).
+- `src/devops/connection.ts`: organização, token, conta, campos da organização (Tipo de atividade e Detalhes do apontamento, que têm nomes internos diferentes em cada organização) e o último tipo usado, no `localStorage` (`ponto:devops` ou `ponto-hml:devops`). Fora do Dexie de propósito: não entra na `outbox`, no Firestore nem no backup.
+- `src/devops/launch.ts`: `loadPreview` lê as tasks e marca as que não existem ou não são Task; `runLaunch` grava uma task por vez e só então chama `repository.markDeclared(ids)`. Token recusado para o lançamento.
+- O total é **substituído** na task, por isso o plano usa todos os intervalos da task nas semanas inteiras que a tela toca (o período 26–25 corta semanas) e repetir um lançamento não conta em dobro.
+- As opções `launchRoundQuarter` e `launchClose` ficam nas configurações (sincronizadas). As regras do Firestore aceitam os dois campos; **é preciso publicar as regras de novo** (`npx firebase-tools deploy --only firestore:rules`), senão as configurações com os campos novos não sobem.
+- No modo demo o lançamento fica escondido.
 
 ## Tema
 

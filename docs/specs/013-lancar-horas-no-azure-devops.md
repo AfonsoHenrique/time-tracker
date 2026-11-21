@@ -1,6 +1,6 @@
 # 013. Lançar horas no Azure DevOps
 
-- **Status**: Rascunho
+- **Status**: Em andamento
 - **Marco**: 8. Lançamento no Azure DevOps (fase 3)
 - **Relacionado**: [ADR 0005](../adr/0005-azure-devops-com-pat-local.md), [005-azure-devops-no-intervalo](005-azure-devops-no-intervalo.md), [007-projeto-e-work-item-na-exportacao](007-projeto-e-work-item-na-exportacao.md), [008-login-e-sincronizacao](008-login-e-sincronizacao.md), [011-calendario-e-horas-decimais](011-calendario-e-horas-decimais.md)
 
@@ -25,10 +25,10 @@ O lançamento usa a **duração real**, com minutos quebrados (ex.: 50 min = 0.8
 
 - R1. A aba Dados ganha a seção **Azure DevOps** com **Organização** (o nome em `dev.azure.com/{organização}`; também aceita a URL inteira colada, ou `{organização}.visualstudio.com`) e **Token de acesso pessoal (PAT)**. O botão **Testar e salvar** faz uma leitura no Azure DevOps e só grava se der certo.
 - R2. O PAT precisa só do escopo **Work Items (Read & write)**. A seção diz isso e tem um link para a página de criação de tokens da organização (`https://dev.azure.com/{organização}/_usersSettings/tokens`).
-- R3. Organização, PAT e o mapeamento de campos (R6) ficam **só neste aparelho** (ver ADR 0005): não vão para o banco sincronizado, para o Firestore nem para o backup JSON. Cada aparelho configura o seu. A chave segue o ambiente (`ponto:devops` ou `ponto-hml:devops`), como a data do último backup.
+- R3. Organização, PAT, conta, mapeamento de campos (R6) e o último tipo de atividade usado ficam **só neste aparelho** (ver ADR 0005): não vão para o banco sincronizado, para o Firestore nem para o backup JSON. Cada aparelho configura o seu. A chave segue o ambiente (`ponto:devops` ou `ponto-hml:devops`), como a data do último backup.
 - R4. Conectado, a seção mostra a organização e o nome da conta do token, com **Trocar token** e **Desconectar** (apaga tudo do aparelho). O PAT nunca é mostrado de volta.
 - R5. Se o Azure DevOps responder 401 ou 403 (token expirado, revogado ou sem escopo), o app avisa "O token do Azure DevOps não vale mais. Gere outro e cole na aba Dados." e não marca nada como declarado.
-- R6. **Campos da organização.** Tipo de atividade e Detalhes do apontamento são campos criados pela organização, com nomes internos que o app não conhece. Depois de conectar, a seção pede o **projeto** (lista dos projetos da organização) e mostra os campos do tipo Task desse projeto em duas listas: **Tipo de atividade** e **Detalhes do apontamento**. O app já deixa escolhidos os campos com esses nomes, quando existirem. Os dois são opcionais: sem o campo mapeado, aquela parte não é preenchida.
+- R6. **Campos da organização.** Tipo de atividade e Detalhes do apontamento são campos criados pela organização, com nomes internos que o app não conhece. Depois de conectar, a seção mostra os campos da organização em duas listas: **Tipo de atividade** e **Detalhes do apontamento**. O app já deixa escolhidos os campos com esses nomes, quando existirem. Os dois são opcionais: sem o campo mapeado, aquela parte não é preenchida. O projeto não é configurado: os valores permitidos do Tipo de atividade são lidos no projeto de cada task.
 
 ### Configurações do lançamento (sincronizadas)
 
@@ -39,7 +39,7 @@ O lançamento usa a **duração real**, com minutos quebrados (ex.: 50 min = 0.8
 
 ### O que vai para cada task
 
-- R9. Entram no lançamento os intervalos **fechados** e **com task** da semana ou do período mostrado na tela. Uma task entra na prévia quando tem pelo menos um intervalo **não declarado**; os intervalos já declarados da mesma task também entram no cálculo, para o total e os detalhes saírem completos.
+- R9. Entram no lançamento os intervalos **fechados** e **com task** da semana ou do período mostrado na tela. Uma task entra na prévia quando tem pelo menos um intervalo **não declarado**; os intervalos já declarados da mesma task também entram no cálculo, para o total e os detalhes saírem completos. Como o total é substituído (R11), cada task leva os seus intervalos das **semanas inteiras** que a tela toca, mesmo os que ficam fora do período 26–25 mostrado.
 - R10. **Duração de cada intervalo**: sem arredondamento, os minutos exatos. Com **Arredondar para 15 min**, a duração de cada intervalo vai para o múltiplo de 15 mais próximo (até 7 min desce, 8 min ou mais sobe; ex.: 52 min → 45 min, 53 min → 1:00), com mínimo de 15 min. Arredondar por intervalo faz as linhas dos detalhes somarem exatamente o total. Os intervalos gravados não mudam.
 - R11. **Horas**: o total da task é a soma das durações do R10, em horas decimais com duas casas (`toDecimalHours`, spec 011: 3:15 → 3.25; 50 min → 0.83). O mesmo valor vai para **Horas Estimadas** (`Microsoft.VSTS.Scheduling.OriginalEstimate`) e **Horas Consumidas** (`Microsoft.VSTS.Scheduling.CompletedWork`). O valor é **substituído**, não somado: lançar de novo a mesma task grava o mesmo total, sem contar duas vezes.
 - R12. **Datas**: **Start Date** (`Microsoft.VSTS.Scheduling.StartDate`) recebe a segunda-feira da semana do primeiro intervalo da task, à meia-noite local; **Target Date** (`Microsoft.VSTS.Scheduling.TargetDate`) recebe a sexta-feira da semana do último intervalo, também à meia-noite local.
@@ -74,19 +74,19 @@ Exemplo base: task 120022, em New, com os intervalos da semana de 16/11/2026 (o 
 19/nov 10:30–10:45 Daily MS
 ```
 
-- [ ] CA1. Dado o exemplo base, então a prévia mostra `0 → 3.25 h`, datas `16/11 a 20/11`, `New → Active` e sete linhas de detalhes, a primeira `19/nov 10:30 10:45 0:15 Daily MS` e a última `16/nov 10:30 11:00 0:30 Daily MS`.
-- [ ] CA2. Dado o exemplo base e o tipo Reuniões, quando confirmado, então o PATCH tem `test /rev`, OriginalEstimate e CompletedWork `3.25`, StartDate `2026-11-16` e TargetDate `2026-11-20` à meia-noite local (em UTC), o campo de detalhes com as sete linhas, o tipo `Reuniões`, AssignedTo da conta do token e State `Active`; e os sete intervalos ficam declarados.
-- [ ] CA3. Com **Fechar a task ao lançar**, depois do CA2 vai um segundo PATCH com State `Closed`. Se ele falhar, os intervalos ficam declarados e o resultado avisa que a task ficou em Active.
-- [ ] CA4. Dado um intervalo de 16:00–16:52 (52 min), sem arredondamento a linha diz `0:52` e conta 0.87 h; com **Arredondar para 15 min**, diz `0:45` e conta 0.75 h. 5 min viram 15 min; 53 min viram 1:00.
-- [ ] CA5. Dada a task do CA2 já lançada e um intervalo novo dela, quando lançada de novo, então as horas são o total de todos os intervalos (não a soma com o valor antigo) e os detalhes têm todas as linhas.
-- [ ] CA6. Dado um intervalo em andamento ou sem task, então ele não entra em nenhuma task; os sem task aparecem na contagem "sem task".
-- [ ] CA7. Dadas duas tasks, quando a segunda responde com revisão mudada, 404 ou erro de regra do processo, então só os intervalos da primeira ficam declarados e o resultado mostra o motivo da segunda.
-- [ ] CA8. Dado um token expirado (401), quando o usuário testa a conexão ou lança, então aparece o aviso do R5 e nenhum intervalo muda.
-- [ ] CA9. Organização, PAT e mapeamento de campos não aparecem no backup JSON baixado, nos documentos do Firestore nem no banco Dexie.
-- [ ] CA10. `minha-org`, `https://dev.azure.com/minha-org/`, `https://dev.azure.com/minha-org/Projeto` e `https://minha-org.visualstudio.com` viram a organização `minha-org`; texto com espaços ou barras soltas é recusado.
-- [ ] CA11. Um backup ou configuração antiga, sem as duas opções novas, é lida com as duas desligadas.
-- [ ] CA12. Uma observação com `<b>` ou `&` vai escapada para o campo de detalhes.
-- [ ] CA13. A folha de prévia e a seção da aba Dados cabem em 390 px nos temas claro e escuro.
+- [x] CA1. Dado o exemplo base, então a prévia mostra `0 → 3.25 h`, datas `16/11 a 20/11`, `New → Active` e sete linhas de detalhes, a primeira `19/nov 10:30 10:45 0:15 Daily MS` e a última `16/nov 10:30 11:00 0:30 Daily MS`.
+- [x] CA2. Dado o exemplo base e o tipo Reuniões, quando confirmado, então o PATCH tem `test /rev`, OriginalEstimate e CompletedWork `3.25`, StartDate `2026-11-16` e TargetDate `2026-11-20` à meia-noite local (em UTC), o campo de detalhes com as sete linhas, o tipo `Reuniões`, AssignedTo da conta do token e State `Active`; e os sete intervalos ficam declarados.
+- [x] CA3. Com **Fechar a task ao lançar**, depois do CA2 vai um segundo PATCH com State `Closed`. Se ele falhar, os intervalos ficam declarados e o resultado avisa que a task ficou em Active.
+- [x] CA4. Dado um intervalo de 16:00–16:52 (52 min), sem arredondamento a linha diz `0:52` e conta 0.87 h; com **Arredondar para 15 min**, diz `0:45` e conta 0.75 h. 5 min viram 15 min; 53 min viram 1:00.
+- [x] CA5. Dada a task do CA2 já lançada e um intervalo novo dela, quando lançada de novo, então as horas são o total de todos os intervalos (não a soma com o valor antigo) e os detalhes têm todas as linhas.
+- [x] CA6. Dado um intervalo em andamento ou sem task, então ele não entra em nenhuma task; os sem task aparecem na contagem "sem task".
+- [x] CA7. Dadas duas tasks, quando a segunda responde com revisão mudada, 404 ou erro de regra do processo, então só os intervalos da primeira ficam declarados e o resultado mostra o motivo da segunda.
+- [x] CA8. Dado um token expirado (401), quando o usuário testa a conexão ou lança, então aparece o aviso do R5 e nenhum intervalo muda.
+- [x] CA9. Organização, PAT e mapeamento de campos não aparecem no backup JSON baixado, nos documentos do Firestore nem no banco Dexie.
+- [x] CA10. `minha-org`, `https://dev.azure.com/minha-org/`, `https://dev.azure.com/minha-org/Projeto` e `https://minha-org.visualstudio.com` viram a organização `minha-org`; texto com espaços ou barras soltas é recusado.
+- [x] CA11. Um backup ou configuração antiga, sem as duas opções novas, é lida com as duas desligadas.
+- [x] CA12. Uma observação com `<b>` ou `&` vai escapada para o campo de detalhes.
+- [x] CA13. A folha de prévia e a seção da aba Dados cabem em 390 px nos temas claro e escuro.
 
 ## Fora do escopo
 
@@ -109,9 +109,10 @@ Exemplo base: task 120022, em New, com os intervalos da semana de 16/11/2026 (o 
   - Horas com `toDecimalHours` de `src/lib/duration.ts`.
 - `src/lib/types.ts`: `Settings.launchRoundQuarter: boolean` e `Settings.launchClose: boolean`, `false` em `DEFAULT_SETTINGS`. `settingsProblem` valida, e quem lê configurações antigas (backup, sincronização, banco) completa com `false` (CA11). As regras do Firestore (`firebase/firestore.rules`) e os testes delas aceitam os campos. Se o banco precisar de `upgrade` para completar a linha de configurações, entra a versão 5 do schema.
 - `src/devops/` (novo, fala com a rede, fora de `lib/`):
-  - `client.ts`: `fetch` para `https://dev.azure.com/{org}/…?api-version=7.1` com `Authorization: Basic base64(':' + PAT)`. `getConnectionData()` (testa e traz a conta do token), `listProjects()`, `listTaskFields(projeto)` (`{projeto}/_apis/wit/workitemtypes/Task/fields`), `getAllowedValues(projeto, campo)`, `getWorkItems(ids)` (lote, com `System.Rev`, `System.State`, `System.WorkItemType`, `System.Title` e os campos do R11–R14) e `patchWorkItem(id, patch)` com `Content-Type: application/json-patch+json`. Erros viram códigos (`unauthorized`, `not-found`, `conflict`, `rule`, `offline`, `unknown`), e `rule` leva a mensagem do Azure DevOps. A API aceita CORS de qualquer origem com o cabeçalho `Authorization` (conferido com um `OPTIONS` em 2026-11-21).
-  - `connection.ts`: ler, gravar e apagar organização, PAT, projeto, mapeamento de campos e último tipo de atividade no `localStorage` com a chave do ambiente. Fica fora de `src/db/` de propósito, para não entrar na `outbox` nem no backup.
-- `src/features/devops/`: `LaunchButton`, `LaunchSheet` (prévia, confirmar, resultado) e `DevOpsSection` da aba Dados. Usam `useRangeData` e marcam os intervalos com uma função nova do repositório, `markDeclared(ids)`, que grava `declared: true` e `updatedAt` numa transação (e entra na `outbox`, como toda gravação).
+  - `client.ts`: `fetch` para `https://dev.azure.com/{org}/…?api-version=7.1` com `Authorization: Basic base64(':' + PAT)`. `getAccount()` (`_apis/connectionData`: testa e traz a conta do token), `listFields()` (`_apis/wit/fields`, da organização inteira, para não exigir escopo de projetos), `getAllowedValues(projeto, campo)`, `getWorkItems(ids)` (lote, com `System.Rev`, `System.State`, `System.WorkItemType`, `System.Title` e os campos do R11–R14) e `patchWorkItem(id, patch)` com `Content-Type: application/json-patch+json`. Erros viram códigos (`unauthorized`, `not-found`, `conflict`, `rule`, `offline`, `unknown`), e `rule` leva a mensagem do Azure DevOps. A API aceita CORS de qualquer origem com o cabeçalho `Authorization` (conferido com um `OPTIONS` em 2026-11-21).
+  - `connection.ts`: ler, gravar e apagar organização, PAT, conta, mapeamento de campos e último tipo de atividade no `localStorage` com a chave do ambiente. Fica fora de `src/db/` de propósito, para não entrar na `outbox` nem no backup.
+- `src/devops/launch.ts`: `loadPreview` (lê as tasks e os valores permitidos, uma vez por projeto) e `runLaunch` (grava, fecha quando configurado e marca os intervalos).
+- `src/features/devops/`: `LaunchPanel` (botão, folha de prévia e resultado) e `DevOpsSection` da aba Dados. Usam `useRangeData` e marcam os intervalos com uma função nova do repositório, `markDeclared(ids)`, que grava `declared: true` e `updatedAt` numa transação (e entra na `outbox`, como toda gravação).
 - A ordem é sempre: gravar a task no Azure DevOps e, só se der certo, marcar os intervalos. Como as horas e os detalhes são substituídos, e não somados, repetir um lançamento que ficou pela metade não conta horas em dobro.
 
 ## Perguntas em aberto
@@ -120,12 +121,12 @@ Exemplo base: task 120022, em New, com os intervalos da semana de 16/11/2026 (o 
 
 ## Tarefas
 
-- [ ] T1. `lib/devopsLaunch.ts` com testes (CA1, CA2, CA4–CA6, CA10, CA12).
-- [ ] T2. Opções de lançamento nas configurações, validação, backup, sincronização e regras do Firestore, com testes (CA11).
-- [ ] T3. `src/devops/` (cliente e conexão local) com testes usando `fetch` falso (CA2, CA3, CA7–CA9).
-- [ ] T4. `markDeclared(ids)` no repositório, com teste.
-- [ ] T5. Seção Azure DevOps na aba Dados: conexão, projeto e campos (R1–R6, R28).
-- [ ] T6. Botão e folha de prévia em Semana e Período (R18–R26).
-- [ ] T7. Conferência headless em 390 px, claro e escuro (CA13), com o Azure DevOps simulado.
+- [x] T1. `lib/devopsLaunch.ts` com testes (CA1, CA2, CA4–CA6, CA10, CA12).
+- [x] T2. Opções de lançamento nas configurações, validação, backup, sincronização e regras do Firestore, com testes (CA11).
+- [x] T3. `src/devops/` (cliente e conexão local) com testes usando `fetch` falso (CA2, CA3, CA7–CA9).
+- [x] T4. `markDeclared(ids)` no repositório, com teste.
+- [x] T5. Seção Azure DevOps na aba Dados: conexão, projeto e campos (R1–R6, R28).
+- [x] T6. Botão e folha de prévia em Semana e Período (R18–R26).
+- [x] T7. Conferência headless em 390 px, claro e escuro (CA13), com o Azure DevOps simulado.
 - [ ] T8. Conferência com o Afonso numa task real, em Active.
-- [ ] T9. Atualizar PRODUCT.md, ARCHITECTURE.md, AGENTS.md e o índice de specs.
+- [x] T9. Atualizar PRODUCT.md, ARCHITECTURE.md, AGENTS.md e o índice de specs.

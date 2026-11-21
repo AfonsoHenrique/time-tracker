@@ -45,6 +45,7 @@ src/
     route.ts        # rota no hash da URL (#/hoje/…, #/semana/…, #/periodo/…, #/dados)
     export.ts       # linhas da planilha HORAS.xlsx, TSV e CSV
     devops.ts       # ids de work item/task, projeto, observação e padrões para dados antigos
+    devopsLaunch.ts # lançamento no Azure DevOps: plano por task, arredondamento, detalhes e JSON Patch
     settings.ts     # validação das configurações (repositório e backup)
     backup.ts       # arquivo de backup: montar, validar, resumo e data do último backup
     demo.ts         # dados fictícios do modo demo da homologação
@@ -59,8 +60,10 @@ src/
     schema.ts       # Dexie (PontoDb): tabelas, índices e migrações (versão 4)
     repository.ts   # única porta de entrada para os dados (getRepository), com fila da sincronização
     demo.ts         # liga, recria e desliga o modo demo (banco separado)
+  devops/           # Azure DevOps (spec 013): client (REST), connection (token no localStorage), launch (prévia e lançamento)
   sync/             # engine, autoSync (gatilhos), firestoreRemote, memoryRemote, firebase (login, carregado sob demanda), session (estado da conta)
   features/
+    devops/         # DevOpsSection (aba Dados) e LaunchPanel (Semana e Período)
     shared/         # useRangeData (semana ou período), useNow, useRoute, useAccount, ExportPanel, errors, lastBackup, theme
     today/          # tela Hoje: TodayScreen, IntervalSheet
     week/           # tela Semana: WeekScreen
@@ -105,5 +108,6 @@ Use `DB_NAME` e `IS_HML` de `src/lib/env.ts`; nunca escreva o nome do banco à m
 - Commitar direto em `main` ou `develop`. Sempre branch + PR para `develop`.
 - Desabilitar, pular ou apagar teste para o CI passar.
 - Mudar a estrutura dos dados salvos sem migração do Dexie (versão nova do schema).
-- Adicionar backend ou serviço externo além do Firebase da fase 2 (ver [ADR 0004](docs/adr/0004-sincronizacao-dexie-firestore.md)).
+- Adicionar backend ou serviço externo além do Firebase da fase 2 (ver [ADR 0004](docs/adr/0004-sincronizacao-dexie-firestore.md)) e da API do Azure DevOps da fase 3 (ver [ADR 0005](docs/adr/0005-azure-devops-com-pat-local.md)).
+- Guardar o token do Azure DevOps no banco, no backup ou no Firestore: ele fica só no `localStorage` (`src/devops/connection.ts`).
 - Fazer as telas falarem com o Firestore: a sincronização passa pelo repositório e por `src/sync/`.
