@@ -8,9 +8,6 @@ import { DEFAULT_SETTINGS, PROJECT_MAX_LENGTH, type DayOff, type Interval, type 
 /** Versão do formato do arquivo de backup. É independente da versão do schema do Dexie. */
 export const BACKUP_VERSION = 1
 
-/** Dias sem backup a partir dos quais a tela Hoje avisa. */
-export const BACKUP_REMINDER_DAYS = 14
-
 /** Tudo o que o app guarda. É o que o backup leva e o que a restauração grava. */
 export interface BackupData {
   intervals: Interval[]
@@ -171,14 +168,6 @@ export function parseBackup(text: string): ParseResult {
     if (error instanceof BackupError) return { ok: false, error: error.message }
     throw error
   }
-}
-
-/** Se a tela Hoje deve lembrar de fazer backup. */
-export function isBackupDue(lastBackupAt: string | null, hasData: boolean, now: Date): boolean {
-  if (lastBackupAt === null) return hasData
-  const last = parseISO(lastBackupAt)
-  if (Number.isNaN(last.getTime())) return hasData
-  return differenceInCalendarDays(now, last) > BACKUP_REMINDER_DAYS
 }
 
 /** "hoje", "ontem", "há 5 dias" ou "nunca". */

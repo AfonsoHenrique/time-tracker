@@ -46,7 +46,7 @@ src/
     export.ts       # linhas da planilha HORAS.xlsx, TSV e CSV
     devops.ts       # ids de work item/task, projeto, observação e padrões para dados antigos
     settings.ts     # validação das configurações (repositório e backup)
-    backup.ts       # arquivo de backup: montar, validar, resumo e aviso de backup
+    backup.ts       # arquivo de backup: montar, validar, resumo e data do último backup
     demo.ts         # dados fictícios do modo demo da homologação
     env.ts          # ambiente (IS_HML, IS_DEMO) e nome do banco
     sync.ts         # chaves, conflito (última gravação vence) e plano do primeiro login

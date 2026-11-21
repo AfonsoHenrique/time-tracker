@@ -268,17 +268,3 @@
   min-height: 0;
   margin: 0;
 }
-
-.backup-reminder {
-  margin: 0 0 16px;
-  padding: 8px 12px;
-  border: 1px dashed var(--warning-border);
-  border-radius: 10px;
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-.backup-reminder a {
-  color: var(--accent);
-  font-weight: 600;
-}

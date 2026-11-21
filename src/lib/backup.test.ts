@@ -6,7 +6,6 @@ import {
   formatDayBr,
   formatExportedAt,
   formatLastBackup,
-  isBackupDue,
   parseBackup,
   type BackupData,
 } from './backup'
@@ -144,21 +143,7 @@ describe('buildBackup e parseBackup', () => {
   })
 })
 
-describe('isBackupDue e formatLastBackup', () => {
-  it('avisa depois de 14 dias (CA6)', () => {
-    expect(isBackupDue(at('2026-11-12 10:00'), true, now)).toBe(false)
-    expect(isBackupDue(at('2026-11-01 10:00'), true, now)).toBe(false)
-    expect(isBackupDue(at('2026-10-31 10:00'), true, now)).toBe(true)
-    // CA6: há 15 dias avisa; há 3 dias, não.
-    expect(isBackupDue(at('2026-10-31 18:00'), true, now)).toBe(true)
-    expect(isBackupDue(at('2026-11-12 18:00'), true, now)).toBe(false)
-  })
-
-  it('sem backup, avisa só se já há dados', () => {
-    expect(isBackupDue(null, false, now)).toBe(false)
-    expect(isBackupDue(null, true, now)).toBe(true)
-  })
-
+describe('formatLastBackup', () => {
   it('texto do último backup', () => {
     expect(formatLastBackup(null, now)).toBe('nunca')
     expect(formatLastBackup(at('2026-11-15 08:00'), now)).toBe('hoje')
