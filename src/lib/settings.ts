@@ -16,5 +16,8 @@ export function settingsProblem(settings: Settings): string | null {
   if (!Number.isInteger(periodStartDay) || periodStartDay < 1 || periodStartDay > 28) {
     return 'O período mensal deve começar entre os dias 1 e 28.'
   }
+  if (typeof settings.launchRoundQuarter !== 'boolean' || typeof settings.launchClose !== 'boolean') {
+    return 'As opções de lançamento no Azure DevOps devem ser sim ou não.'
+  }
   return null
 }

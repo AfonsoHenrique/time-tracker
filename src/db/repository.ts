@@ -164,6 +164,8 @@ export function createRepository(db: PontoDb) {
       dailyTargetMinutes: row?.dailyTargetMinutes ?? DEFAULT_SETTINGS.dailyTargetMinutes,
       workDays: [...(row?.workDays ?? DEFAULT_SETTINGS.workDays)],
       periodStartDay: row?.periodStartDay ?? DEFAULT_SETTINGS.periodStartDay,
+      launchRoundQuarter: row?.launchRoundQuarter ?? DEFAULT_SETTINGS.launchRoundQuarter,
+      launchClose: row?.launchClose ?? DEFAULT_SETTINGS.launchClose,
     }
   }
 
@@ -248,6 +250,26 @@ export function createRepository(db: PontoDb) {
       return saved
     },
 
+    /**
+     * Marca os intervalos como declarados no Azure DevOps (spec 013), numa transação só. Ids que não
+     * existem mais são ignorados. Devolve quantos mudaram.
+     */
+    async markDeclared(ids: readonly string[]): Promise<number> {
+      const count = await db.transaction('rw', db.intervals, ...syncTables, async () => {
+        const updatedAt = new Date().toISOString()
+        let changedCount = 0
+        for (const current of await db.intervals.bulkGet([...ids])) {
+          if (!current || current.declared) continue
+          await db.intervals.put({ ...current, declared: true, updatedAt })
+          await track(intervalKey(current.id), updatedAt)
+          changedCount += 1
+        }
+        return changedCount
+      })
+      if (count > 0) changed()
+      return count
+    },
+
     /** Apaga o intervalo. Se ele não existir, não faz nada. */
     async deleteInterval(id: string): Promise<void> {
       const removed = await db.transaction('rw', db.intervals, ...syncTables, async () => {
@@ -308,6 +330,8 @@ export function createRepository(db: PontoDb) {
           dailyTargetMinutes: patch.dailyTargetMinutes ?? row?.dailyTargetMinutes ?? DEFAULT_SETTINGS.dailyTargetMinutes,
           workDays: patch.workDays ?? row?.workDays ?? [...DEFAULT_SETTINGS.workDays],
           periodStartDay: patch.periodStartDay ?? row?.periodStartDay ?? DEFAULT_SETTINGS.periodStartDay,
+          launchRoundQuarter: patch.launchRoundQuarter ?? row?.launchRoundQuarter ?? DEFAULT_SETTINGS.launchRoundQuarter,
+          launchClose: patch.launchClose ?? row?.launchClose ?? DEFAULT_SETTINGS.launchClose,
         }
         validateSettings(next)
         const updatedAt = new Date().toISOString()

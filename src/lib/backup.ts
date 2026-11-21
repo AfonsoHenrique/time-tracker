@@ -111,6 +111,8 @@ function readSettings(raw: unknown): Settings {
     dailyTargetMinutes: (raw.dailyTargetMinutes ?? DEFAULT_SETTINGS.dailyTargetMinutes) as number,
     workDays: (raw.workDays ?? [...DEFAULT_SETTINGS.workDays]) as number[],
     periodStartDay: (raw.periodStartDay ?? DEFAULT_SETTINGS.periodStartDay) as number,
+    launchRoundQuarter: (raw.launchRoundQuarter ?? DEFAULT_SETTINGS.launchRoundQuarter) as boolean,
+    launchClose: (raw.launchClose ?? DEFAULT_SETTINGS.launchClose) as boolean,
   }
   const problem = settingsProblem(settings)
   if (problem) throw new BackupError(`Configurações inválidas: ${problem}`)

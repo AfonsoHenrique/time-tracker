@@ -53,12 +53,18 @@ export interface Settings {
   workDays: number[]
   /** Dia do mês em que o período mensal começa (1 a 28). O período vai até o dia anterior do mês seguinte. */
   periodStartDay: number
+  /** Lançamento no Azure DevOps (spec 013): arredondar a duração de cada intervalo para 15 min. */
+  launchRoundQuarter: boolean
+  /** Lançamento no Azure DevOps (spec 013): fechar a task (Closed) em vez de deixar em Active. */
+  launchClose: boolean
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
   dailyTargetMinutes: 8 * 60,
   workDays: [1, 2, 3, 4, 5],
   periodStartDay: 26,
+  launchRoundQuarter: false,
+  launchClose: false,
 }
 
 /** Intervalo fechado de dias, em chaves `AAAA-MM-DD` (as duas pontas incluídas). */

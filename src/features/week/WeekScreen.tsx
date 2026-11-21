@@ -8,6 +8,7 @@ import { isIrregularDay } from '../../lib/irregular'
 import { dayKey, parseDayKey, weekRange } from '../../lib/time'
 import type { Interval } from '../../lib/types'
 import { useNow } from '../shared/useNow'
+import { LaunchPanel } from '../devops/LaunchPanel'
 import { ExportPanel } from '../shared/ExportPanel'
 import { useRangeData, type RangeData } from '../shared/useRangeData'
 import './week.css'
@@ -24,7 +25,7 @@ export function WeekScreen({ day: selected, onChangeWeek, onOpenDay }: Props) {
   const today = dayKey(now)
   const range = weekRange(selected ?? today)
   const isCurrent = range.start === weekRange(today).start
-  const { data } = useRangeData('week', range.start)
+  const { data, run } = useRangeData('week', range.start)
 
   const goTo = (start: string) => onChangeWeek(start === weekRange(today).start ? null : start)
   const shift = (amount: number) => goTo(dayKey(addWeeks(parseDayKey(range.start), amount)))
@@ -59,6 +60,7 @@ export function WeekScreen({ day: selected, onChangeWeek, onOpenDay }: Props) {
           now={now}
           today={today}
           onOpenDay={onOpenDay}
+          run={run}
         />
       )}
     </main>
@@ -71,9 +73,10 @@ interface WeekBodyProps {
   now: Date
   today: string
   onOpenDay: (day: string | null) => void
+  run: (action: () => Promise<unknown>) => Promise<void>
 }
 
-function WeekBody({ weekStart, data, now, today, onOpenDay }: WeekBodyProps) {
+function WeekBody({ weekStart, data, now, today, onOpenDay, run }: WeekBodyProps) {
   const week = summarizeWeek(weekStart, data.intervals, data.daysOff, data.settings, now)
   return (
     <>
@@ -98,6 +101,7 @@ function WeekBody({ weekStart, data, now, today, onOpenDay }: WeekBodyProps) {
       </section>
 
       <ExportPanel range={data.range} intervals={data.intervals} />
+      <LaunchPanel range={data.range} intervals={data.intervals} settings={data.settings} run={run} />
     </>
   )
 }

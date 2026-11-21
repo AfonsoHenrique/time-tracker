@@ -1,6 +1,6 @@
 # 0005. Azure DevOps com token de acesso pessoal guardado no aparelho
 
-- **Status**: Proposto
+- **Status**: Aceito
 - **Data**: 2026-11-21
 
 ## Contexto
@@ -11,7 +11,7 @@ O usuário é PJ: a organização do Azure DevOps é do cliente, num tenant do M
 
 A API REST do Azure DevOps aceita chamadas direto do navegador: responde ao `OPTIONS` com `Access-Control-Allow-Origin: *` e aceita o cabeçalho `Authorization` (conferido em 2026-11-21).
 
-## Decisão (proposta)
+## Decisão
 
 Autenticar com um **token de acesso pessoal (PAT)** que o usuário gera no Azure DevOps, só com o escopo **Work Items (Read & write)**, e cola na aba Dados.
 

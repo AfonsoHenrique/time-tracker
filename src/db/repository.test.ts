@@ -166,6 +166,30 @@ describe('configurações', () => {
   it('o erro é um RepositoryError', async () => {
     await expect(repo.saveSettings({ periodStartDay: 0 })).rejects.toBeInstanceOf(RepositoryError)
   })
+
+  it('salva as opções de lançamento no Azure DevOps (spec 013)', async () => {
+    await repo.saveSettings({ launchRoundQuarter: true })
+    await repo.saveSettings({ launchClose: true })
+    expect(await repo.getSettings()).toEqual({ ...DEFAULT_SETTINGS, launchRoundQuarter: true, launchClose: true })
+  })
+})
+
+describe('markDeclared (spec 013)', () => {
+  it('marca só os intervalos pedidos, ignora ids que não existem e põe na fila da sincronização', async () => {
+    const a = await repo.createInterval({ start: at('2026-11-16 08:00'), end: at('2026-11-16 09:00'), taskId: 1 })
+    const b = await repo.createInterval({ start: at('2026-11-16 09:00'), end: at('2026-11-16 10:00'), taskId: 1 })
+    const c = await repo.createInterval({ start: at('2026-11-16 10:00'), end: at('2026-11-16 11:00'), taskId: 2 })
+    await repo.sync.markPushed(await repo.sync.pending())
+    expect(await repo.markDeclared([a.id, b.id, 'nao-existe'])).toBe(2)
+    const list = await repo.listIntervals('2026-11-16', '2026-11-16')
+    expect(list.map((i) => [i.id, i.declared])).toEqual([
+      [a.id, true],
+      [b.id, true],
+      [c.id, false],
+    ])
+    expect((await repo.sync.pending()).map((doc) => doc.key).sort()).toEqual([`intervals/${a.id}`, `intervals/${b.id}`].sort())
+    expect(await repo.markDeclared([a.id])).toBe(0)
+  })
 })
 
 describe('campos do Azure DevOps (spec 005)', () => {

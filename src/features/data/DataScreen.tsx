@@ -13,6 +13,7 @@ import { APP_ENV, type AppEnv } from '../../lib/env'
 import { THEME_CHOICES, THEME_LABELS, type ThemeChoice } from '../../lib/theme'
 import { readLastBackup } from '../shared/lastBackup'
 import { useAccount } from '../shared/useAccount'
+import { DevOpsSection } from '../devops/DevOpsSection'
 import { AccountSection } from './AccountSection'
 import { downloadBackup } from './downloadBackup'
 import { applyTheme, readThemeChoice, saveThemeChoice } from '../shared/theme'
@@ -29,13 +30,14 @@ const DemoSection = import.meta.env.VITE_APP_ENV === 'hml' ? lazy(() => import('
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
-/** Aba Dados: conta e sincronização, tema, baixar backup, restaurar um backup e ver o armazenamento do navegador. */
+/** Aba Dados: conta e sincronização, tema, Azure DevOps, baixar backup, restaurar um backup e ver o armazenamento do navegador. */
 export function DataScreen() {
   return (
     <main className="app data">
       <h1 className="data-title">Dados</h1>
       <AccountSection />
       <AppearanceSection />
+      <DevOpsSection />
       <BackupSection />
       <RestoreSection />
       <StorageSection />

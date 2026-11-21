@@ -7,6 +7,7 @@ import { formatDuration } from '../../lib/duration'
 import { isIrregularDay } from '../../lib/irregular'
 import { dayKey, parseDayKey, periodRange, weekRange } from '../../lib/time'
 import type { DayRange } from '../../lib/types'
+import { LaunchPanel } from '../devops/LaunchPanel'
 import { ExportPanel } from '../shared/ExportPanel'
 import { useNow } from '../shared/useNow'
 import { useRangeData, type RangeData } from '../shared/useRangeData'
@@ -22,7 +23,7 @@ interface Props {
 export function PeriodScreen({ day: selected, onChangePeriod, onOpenWeek }: Props) {
   const now = useNow(1000)
   const today = dayKey(now)
-  const { data } = useRangeData('period', selected ?? today)
+  const { data, run } = useRangeData('period', selected ?? today)
   const range = data?.range
   const isCurrent = range ? today >= range.start && today <= range.end : true
 
@@ -59,7 +60,7 @@ export function PeriodScreen({ day: selected, onChangePeriod, onOpenWeek }: Prop
       {data === null ? (
         <p className="muted loading">Carregando…</p>
       ) : (
-        <PeriodBody data={data} now={now} today={today} onOpenWeek={onOpenWeek} />
+        <PeriodBody data={data} now={now} today={today} onOpenWeek={onOpenWeek} run={run} />
       )}
     </main>
   )
@@ -86,9 +87,10 @@ interface BodyProps {
   now: Date
   today: string
   onOpenWeek: (weekStart: string) => void
+  run: (action: () => Promise<unknown>) => Promise<void>
 }
 
-function PeriodBody({ data, now, today, onOpenWeek }: BodyProps) {
+function PeriodBody({ data, now, today, onOpenWeek, run }: BodyProps) {
   const { range, intervals, daysOff, settings } = data
   const total = summarizeRange(range, intervals, daysOff, settings, now)
 
@@ -134,6 +136,7 @@ function PeriodBody({ data, now, today, onOpenWeek }: BodyProps) {
       </ul>
 
       <ExportPanel range={range} intervals={intervals} />
+      <LaunchPanel range={range} intervals={intervals} settings={settings} run={run} />
     </>
   )
 }

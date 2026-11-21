@@ -51,7 +51,9 @@ service cloud.firestore {
     }
 
     function isSettings(data) {
-      return data.keys().hasOnly(['dailyTargetMinutes', 'workDays', 'periodStartDay'])
+      return data.keys().hasOnly(['dailyTargetMinutes', 'workDays', 'periodStartDay', 'launchRoundQuarter', 'launchClose'])
+        && (!('launchRoundQuarter' in data) || data.launchRoundQuarter is bool)
+        && (!('launchClose' in data) || data.launchClose is bool)
         && data.dailyTargetMinutes is int && data.dailyTargetMinutes >= 0 && data.dailyTargetMinutes <= 1440
         && data.workDays is list && data.workDays.size() <= 7
         && data.periodStartDay is int && data.periodStartDay >= 1 && data.periodStartDay <= 28;

@@ -119,6 +119,18 @@ describe('buildBackup e parseBackup', () => {
     expect(result.ok && result.data.settings).toEqual(DEFAULT_SETTINGS)
   })
 
+  it('configurações sem as opções de lançamento ficam desligadas; valor inválido é recusado (spec 013, CA11)', () => {
+    const base = buildBackup(sampleData(), now, 'prod')
+    const old = parseBackup(text({ ...base, settings: { dailyTargetMinutes: 480, workDays: [1, 2, 3, 4, 5], periodStartDay: 26 } }))
+    expect(old.ok && old.data.settings).toEqual(DEFAULT_SETTINGS)
+    const on = parseBackup(text({ ...base, settings: { ...DEFAULT_SETTINGS, launchRoundQuarter: true, launchClose: true } }))
+    expect(on.ok && on.data.settings).toMatchObject({ launchRoundQuarter: true, launchClose: true })
+    expect(parseBackup(text({ ...base, settings: { ...DEFAULT_SETTINGS, launchClose: 'sim' } }))).toEqual({
+      ok: false,
+      error: 'Configurações inválidas: As opções de lançamento no Azure DevOps devem ser sim ou não.',
+    })
+  })
+
   it('leva o projeto e recusa projeto com mais de 15 caracteres (CA8)', () => {
     const base = buildBackup(sampleData(), now, 'prod')
     const withProject = (project: unknown) =>
