@@ -54,7 +54,7 @@ Para revisar a interface na homologação, hoje é preciso bater pontos à mão 
 - `src/lib/env.ts`: ganha `DEMO_DB_NAME = 'ponto-hml-demo'`, e `DB_NAME` passa a ser ele quando `IS_HML` e o `localStorage` tem `ponto-hml:demo = '1'`. Ganha `IS_DEMO`. Em produção, `IS_HML` é `false` em tempo de build, então a leitura do `localStorage` some do bundle. A leitura fica num `try/catch` (navegação privada).
 - Ligar o demo: grava o `localStorage`, abre um `PontoDb(DEMO_DB_NAME)`, chama `replaceAll(buildDemoData(new Date()))` e recarrega em `#/hoje`. Recriar faz o mesmo sobre o banco demo. Sair apaga a chave e recarrega. Isso fica em `src/db/demo.ts`, porque só `src/db/` abre um `PontoDb`, e a aba Dados carrega `DemoSection` com `lazy(() => import(…))` atrás de `import.meta.env.VITE_APP_ENV === 'hml'`, para o gerador não entrar no bundle de produção. (Um `IS_HML` importado não basta: o build não corta o `import()` através de módulos.)
 - `DataScreen`: bloco `DemoSection` renderizado só com `IS_HML`. `App`: selo com "· Demo" quando `IS_DEMO`.
-- `lastBackup`: chave `ponto-hml-demo:lastBackupAt` no demo (deriva de `DB_NAME`), para o aviso de backup da homologação real não mudar.
+- `lastBackup`: chave `ponto-hml-demo:lastBackupAt` no demo (deriva de `DB_NAME`), para a data do último backup da homologação real não mudar.
 - Sem mudança no schema do Dexie: o banco demo usa as mesmas versões e migrações.
 - O CA1 é conferido à mão na T4, com `grep` no `dist/`, e não vira passo do CI.
 

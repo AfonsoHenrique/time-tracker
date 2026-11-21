@@ -15,7 +15,7 @@ Na fase 1, os dados vivem só no navegador de cada aparelho. Se o Chrome limpar 
 - R3. **Restaurar** abre um arquivo `.json`, valida o conteúdo e mostra um resumo: quantos intervalos, de quando a quando, quantos dias sem meta e de qual ambiente veio. A tela pede confirmação antes de **substituir todos os dados** do aparelho.
 - R4. Um arquivo inválido ou de versão desconhecida não muda nada e mostra o motivo, por exemplo "Não é um backup do Ponto" ou "Intervalo 12 com fim antes do início".
 - R5. A restauração é tudo ou nada: se algo falhar no meio, os dados anteriores continuam lá.
-- R6. A tela mostra a data do **último backup** baixado neste aparelho. Se o último backup tiver mais de 14 dias, ou se nunca houve backup e já existem dados, a tela Hoje mostra um aviso discreto com um link para a aba Dados.
+- R6. A tela mostra a data do **último backup** baixado neste aparelho. ~~Se o último backup tiver mais de 14 dias, ou se nunca houve backup e já existem dados, a tela Hoje mostra um aviso discreto com um link para a aba Dados.~~ (Revisto em 2026-11-21: o aviso saiu da tela Hoje a pedido do Afonso; a data do último backup fica só na aba Dados.)
 - R7. O bloco Armazenamento mostra se o armazenamento é persistente (`navigator.storage.persisted()`) e o espaço usado. Quando não for persistente, um botão pede de novo.
 - R8. Um backup sem os campos do Azure DevOps (feito antes da spec 005) é aceito: os intervalos ficam sem work item, sem task e não declarados.
 
@@ -26,7 +26,7 @@ Na fase 1, os dados vivem só no navegador de cada aparelho. Se o Chrome limpar 
 - [x] CA3. Restaurar um backup com um intervalo de fim antes do início mostra o erro com o número do intervalo e não muda nada.
 - [x] CA4. Restaurar um backup de homologação na produção funciona, e o resumo avisa "Backup da homologação".
 - [x] CA5. Antes de restaurar, a tela mostra o resumo e só substitui depois de "Substituir meus dados". Cancelar não muda nada.
-- [x] CA6. Depois de baixar um backup, a aba Dados mostra "Último backup: hoje". Com o último backup há 15 dias, a tela Hoje mostra o aviso. Com o último backup há 3 dias, o aviso não aparece.
+- [x] CA6. Depois de baixar um backup, a aba Dados mostra "Último backup: hoje". A tela Hoje não mostra aviso de backup, nem sem backup nenhum nem com o último há mais de 14 dias (revisto em 2026-11-21).
 - [x] CA7. As quatro abas cabem em 390 px, nos temas claro e escuro.
 - [x] CA8. Um backup cujos intervalos não têm `workItemId`, `taskId`, `declared` e `project` é restaurado com `null`, `null`, `false` e `''`. Um `taskId` que não é inteiro positivo, ou um `project` com mais de 15 caracteres, dá erro com o número do intervalo.
 
@@ -35,13 +35,14 @@ Na fase 1, os dados vivem só no navegador de cada aparelho. Se o Chrome limpar 
 - Backup automático ou na nuvem (fase 2, com a sincronização).
 - Juntar o backup com os dados existentes: a restauração sempre substitui tudo.
 - Editar as configurações (meta diária, dias úteis, início do período) pela tela.
+- Aviso de backup na tela Hoje (removido em 2026-11-21: o Afonso achou que não ficava bom ali).
 
 ## Desenho
 
 - `src/lib/backup.ts` (puro, com teste):
   - `buildBackup(data, now, env)` monta o objeto `{ app: 'ponto', version: 1, exportedAt, env, intervals, daysOff, settings }`.
   - `parseBackup(text)` devolve `{ ok: true, data, summary }` ou `{ ok: false, error }`. Ele valida a estrutura, os instantes ISO, a ordem de início e fim, se há no máximo um intervalo aberto, os dias `AAAA-MM-DD`, as configurações os ids do Azure DevOps (`isDevOpsId`) e o projeto (`normalizeProject`, spec 007). Campos do Azure DevOps ausentes são completados com `withDevOpsDefaults`, de `src/lib/devops.ts`.
-  - `isBackupDue(lastBackupAt, hasData, now)` decide o aviso.
+  - `formatLastBackup(lastBackupAt, now)` dá o texto "hoje", "ontem", "há N dias" ou "nunca" da aba Dados. (O `isBackupDue`, que decidia o aviso na tela Hoje, saiu com o aviso em 2026-11-21.)
 - O repositório ganha `exportAll()` e `replaceAll(data)`. O `replaceAll` limpa e regrava as três tabelas numa única transação Dexie, para cumprir R5.
 - A data do último backup fica no `localStorage`, com uma chave por ambiente (`ponto:lastBackupAt` e `ponto-hml:lastBackupAt`). Ela é só uma informação deste aparelho e não faz parte dos dados. Por isso não muda o schema do Dexie.
 - O backup não muda o schema e não precisa de migração. A versão do formato do backup (`version: 1`) é independente da versão do schema do Dexie.
@@ -54,6 +55,6 @@ Na fase 1, os dados vivem só no navegador de cada aparelho. Se o Chrome limpar 
 - [x] T1. `lib/backup.ts` + testes (CA1–CA4, CA6, CA8).
 - [x] T2. `exportAll` e `replaceAll` no repositório + testes com `fake-indexeddb` (CA1, R5).
 - [x] T3. Rota e aba Dados, tela com backup, restauração e armazenamento (CA5).
-- [x] T4. Aviso de backup na tela Hoje (CA6).
+- [x] T4. ~~Aviso de backup na tela Hoje~~ (removido em 2026-11-21; CA6 revisto).
 - [x] T5. Conferência headless: baixar, restaurar, arquivo inválido, quatro abas (CA7).
 - [x] T6. Atualizar PRODUCT.md, ARCHITECTURE.md, AGENTS.md e o índice de specs.
